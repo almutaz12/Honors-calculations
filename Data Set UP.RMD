@@ -1,0 +1,367 @@
+# Cleaning and summarizing the data
+
+
+
+```{r include = TRUE}
+library(dplyr)
+library(tidyr)
+```
+
+function to calculate returns 
+```{r}
+percentage_change=function(x,lag=1){
+  n=length(x)
+  if (n < 2) return(rep(NA, n))
+  pchange = c((x[(1+lag):n]-x[1:(n-lag)])/x[1:(n-lag)],NA)
+  return(pchange)
+}
+```
+
+
+calculating daily returns for NYSE and merging sectors and industry data. 
+```{r}
+
+load("~/Desktop/Honors-/NYSE_Stock_Data.Rda")
+Yearly_returns <- 
+  NYSE %>% 
+  arrange(company, date) %>%
+  group_by(company) %>%
+  mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
+  mutate(year = lubridate::year(date)) %>%
+  group_by(company, year) %>%
+  summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) 
+  
+
+NYSE_companies <- read.csv("/Users/Momo/Desktop/Honors-/NYSE_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+
+Yearly_returns <- 
+  Yearly_returns %>%
+  left_join(NYSE_companies %>% select(company = Symbol, market_cap_2015 = MarketCap, Sector, Industry,IPOyear,Name)) 
+
+  Yearly_returns=Yearly_returns[order(Yearly_returns$yearly_return,decreasing=TRUE),]
+  Yearly_returns=Yearly_returns[order(Yearly_returns$year,decreasing=TRUE),]
+  NYSE_Y_Returns=subset(Yearly_returns,! is.na(Yearly_returns$yearly_return))
+  write.csv(NYSE_Y_Returns,file="NYSE_Y_returns.csv")
+
+Yearly_returns1 <- 
+  Yearly_returns %>%
+  group_by(year) %>%
+  mutate(top_10 = percent_rank(yearly_return) >= .90)  
+
+Table_1 <- 
+  Yearly_returns1 %>%
+  group_by(Industry, year, top_10) %>%
+  summarize(count = n()) %>%
+  spread(value = count, key = top_10, fill = 0) %>%
+  rename(bottom_90 = `FALSE`, top_10 = `TRUE`) %>% .[,-5] %>%
+  mutate(proportion = top_10 / (bottom_90 + top_10)) %>%
+  arrange(year, proportion)
+
+
+#NYSE_sectors=merge(NYSE,companies,by.x=7,by.y=1)
+#NYSE_sectors=NYSE_sectors[order(NYSE_sectors$company,decreasing = FALSE),]
+#NYSE_sectors$daily_return=percentage_change(NYSE_sectors$adj_close,lag=1)
+#NYSE_daily_returns=NYSE_daily_returns[is.finite(NYSE_daily_returns)]
+#NYSE_sectors=NYSE_sectors[-c(nrow(NYSE_sectors))]
+#NYSE_sectors$daily_returns=NYSE_daily_returns
+#save(NYSE_sectors, file = "NYSE_Returns_Data.Rda")
+```
+
+# calculating daily returns for NASDAQ and merging sectors and industry data. 
+```{r}
+load("~/Desktop/Honors-/NASDAQ_Stock_Data.Rda")
+Yearly_returns <- 
+  NASDAQ %>% 
+  arrange(company, date) %>%
+  group_by(company) %>%
+  mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
+  mutate(year = lubridate::year(date)) %>%
+  group_by(company, year) %>%
+  summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) 
+  
+
+NASDAQ_companies <- read.csv("~/Desktop/Honors-/NASDAQ_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+
+Yearly_returns <- 
+  Yearly_returns %>%
+  left_join(NASDAQ_companies %>% select(company = Symbol, market_cap_2015 = MarketCap, Sector, industry,IPOyear,Name)) 
+
+  Yearly_returns=Yearly_returns[order(Yearly_returns$yearly_return,decreasing=TRUE),]
+  Yearly_returns=Yearly_returns[order(Yearly_returns$year,decreasing=TRUE),]
+  NASDAQ_Y_Returns=subset(Yearly_returns,! is.na(Yearly_returns$yearly_return))
+  NASDAQ_Y_Returns=merge(NASDAQ_Y_Returns,Market_Return,by.x=2,by.y=1)
+ # write.csv(NASDAQ_Y_Returns,file="NASDAQ_Y_returns.csv")
+  
+#load("~/Desktop/Honors-/NASDAQ_Stock_Data.Rda")
+#NASDAQ_companies <- read.csv("NASDAQ_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+#NASDAQ_sectors=merge(NASDAQ,NASDAQ_companies,by.x=7,by.y=1)
+
+#NASDAQ_sectors=NASDAQ_sectors[order(NASDAQ_sectors$date,decreasing = FALSE),]
+
+#NASDAQ_daily_returns=percentage_change(NASDAQ_sectors$adj_close,lag=1)
+#NASDAQ_daily_returns=NASDAQ_daily_returns[is.finite(NASDAQ_daily_returns)]
+#NASDAQ_sectors$daily_returns=NASDAQ_daily_returns
+#save(NASDAQ_sectors, file = "NASDAQ_Returns_Data.Rda")
+```
+
+# calculating daily returns for SP_500 and merging sectors and industry data. 
+```{r}
+load("~/Desktop/Honors-/Data/SP_500_Stock_Data.Rda")
+Yearly_returns <- 
+  SP_500 %>% 
+  arrange(company, date) %>%
+  group_by(company) %>%
+  mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
+  mutate(year = lubridate::year(date)) %>%
+  group_by(company, year) %>%
+  summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) 
+  
+
+SP_500_companies <- read.csv("/Users/Momo/Desktop/Honors-/Data/S&P 500_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+
+Yearly_returns <- 
+  Yearly_returns %>%
+  left_join(SP_500_companies %>% select(company = Symbol, Sector,Name)) 
+
+  Yearly_returns=Yearly_returns[order(Yearly_returns$yearly_return,decreasing=TRUE),]
+  Yearly_returns=Yearly_returns[order(Yearly_returns$year,decreasing=TRUE),]
+  SP_Y_Returns=subset(Yearly_returns,! is.na(Yearly_returns$yearly_return))
+  SP_Y_Returns=merge(SP_Y_Returns,Market_Return,by.x=2,by.y=1)
+   SP_Y_Returns=merge(SP_Y_Returns,MarketCap,by.x=2,by.y=1)
+  ##############
+  Yearly_returns1 <- 
+  SP_Y_Returns %>%
+  group_by(year) %>%
+  mutate(top_10 = percent_rank(yearly_return) >= .90)  
+  
+  #write.csv(SP_Y_Returns,file="SP500_Y_returns.csv")
+  
+#SP_companies <- read.csv("S&P 500_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+#SP_sectors=merge(SP_500,companies,by.x=7,by.y=1)
+#SP_sectors=SP_sectors[order(SP_sectors$date,decreasing = FALSE),]
+#SP_daily_returns=percentage_change(SP_sectors$adj_close,lag=1)
+#SP_sectors$daily_returns=SP_daily_returns
+#save(SP_sectors, file = "SP_500_Returns_Data.Rda")
+```
+
+# Market Return as SP_500 Index return
+```{r}
+SP_500_Index=read.csv("/Users/Momo/Desktop/Honors-/Data/S&P500 INDEX.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+SP_Y_Index <- 
+  SP_500_Index[order(SP_500_Index$Date,decreasing = FALSE),] %>% 
+  mutate(daily_return = percentage_change(Adj.Close, lag = 1)) %>%
+  mutate(year = lubridate::year(Date)) %>%
+  group_by(year) %>%
+  summarise(market_return = prod(1 + daily_return) - 1, ndays = n()) 
+  Market_Return=subset(SP_Y_Index,! is.na(SP_Y_Index$market_return))
+  Market_Return=rename(Market_Return, days_per_year= `ndays`)
+```
+
+```{r}
+
+#"Advance_decline Line calculation " " AD= (#winning companies-#of losing companies) +AD(t-1)"
+
+# Total number of companies per year 
+NYSE_Companies_per_year=as.data.frame(table(NYSE_Y_Returns$year))
+NYSE_Companies_per_year=rename(NYSE_Companies_per_year,year = `Var1`, total_comps = `Freq`)
+
+# Number of companies with yearly return>0 per year
+NYSE_Winning_comps=as.data.frame(table(subset(NYSE_Y_Returns,yearly_return>0)$year))
+NYSE_Winning_comps=rename(NYSE_Winning_comps,year = `Var1`, winning = `Freq`)
+
+# Number of companies with yearly return>0 per year
+NYSE_Losing_comps=as.data.frame(table(subset(NYSE_Y_Returns,yearly_return<0)$year))
+NYSE_Losing_comps=rename(NYSE_Losing_comps,year = `Var1`, losing = `Freq`)
+
+# Merging above tables and summarizing it to create data for AD calculations 
+AD_line_data=merge(NYSE_Winning_comps,NYSE_Losing_comps,by.x=1, by.y =1)
+AD_line_data$total=NYSE_Companies_per_year$total_comps
+AD_line_data$percWin=AD_line_data$winning/AD_line_data$total
+AD_line_data$percLose=AD_line_data$losing/AD_line_data$total
+AD_line_data$WinLoseDiff=AD_line_data$winning-AD_line_data$losing
+
+# Calculating AD_line 
+AD_line_data$AD_line[1]=AD_line_data$WinLoseDiff[1]
+for(i in 2:nrow(AD_line_data)){
+  AD_line_data$AD_line[i]=AD_line_data$WinLoseDiff[i]+AD_line_data$AD_line[i-1]
+}
+plot(AD_line_data$year,AD_line_data$AD_line,main="Advance/Decline Line",xlab="Years",Ylab="AD_line(#win-#lost+AD(t-1) *t=Time",type="l",col="red")
+lines(AD_line_data$year,AD_line_data$AD_line,type="l",col="red")
+
+plot(AD_line_data$year,AD_line_data$WinLoseDiff,main="difference between the number of winning and losing companies",xlab="Years",Ylab="win-lose")
+lines(AD_line_data$year,AD_line_data$WinLoseDiff,type="l",col="red")
+
+write.csv(AD_line_data,file="NYSE_AD_Line_data.csv")
+```
+
+
+ #S&P Tech Companies with higher return than industry average
+```{r}
+#"Advance_decline Line calculation " " AD= (#winning companies-#of losing companies) +AD(t-1)"
+
+# Total number of companies per year 
+SP_Companies_per_year=as.data.frame(table(SP_Y_Returns$year))
+SP_Companies_per_year=rename(SP_Companies_per_year,year = `Var1`, total_winning = `Freq`)
+
+
+
+# Number of companies with yearly return>0 per year
+Tech_comps=as.data.frame((subset(SP_Y_Returns,Sector=="Information Technology" | Sector=="Technology")))
+techPerYear=as.data.frame(table(Tech_comps$year))
+techPerYear$total=SP_Companies_per_year$total_winning
+techPerYear$techPerc=techPerYear$Freq/techPerYear$total
+techPerYear=rename(techPerYear,year=`Var1`, tech=`Freq`)
+
+Tech_win=as.data.frame(table(subset(Tech_comps,yearly_return>mean(yearly_return))$year))
+Tech_win=rename(Tech_win,year = `Var1`, winning = `Freq`)
+
+# Number of companies with yearly return>0 per year
+SP_Losing_comps=as.data.frame(table(subset(Tech_comps,yearly_return<mean(yearly_return))$year))
+SP_Losing_comps=rename(SP_Losing_comps,year = `Var1`, losing = `Freq`)
+
+# Merging above tables and summarizing it to create data for AD calculations 
+AD_line_data=merge(Tech_win,SP_Losing_comps,by.x=1, by.y =1)
+#AD_line_data$total=SP_Companies_per_year$total_winning
+#AD_line_data$percWin=AD_line_data$winning/AD_line_data$total
+#AD_line_data$percLose=AD_line_data$losing/AD_line_data$total
+AD_line_data$WinLoseDiff=AD_line_data$winning-AD_line_data$losing
+
+# Calculating AD_line 
+AD_line_data$AD_line[1]=AD_line_data$WinLoseDiff[1]
+for(i in 2:nrow(AD_line_data)){
+  AD_line_data$AD_line[i]=AD_line_data$WinLoseDiff[i]+AD_line_data$AD_line[i-1]
+}
+plot(AD_line_data$year,AD_line_data$AD_line,main="Tech Industry Advance/Decline Line",xlab="Years",Ylab="AD_line(#win-#lost+AD(t-1) *t=Time",type="l",col="red")
+lines(AD_line_data$year,AD_line_data$AD_line,type="l",col="red")
+
+plot(AD_line_data$year,AD_line_data$WinLoseDiff,main="difference between winning and losing tech companies ",xlab="Years",Ylab="win-lose")
+lines(AD_line_data$year,AD_line_data$WinLoseDiff,type="l",col="red")
+
+plot(AD_line_data$year,Market_Return$market_return,type="l",col="green")
+lines(AD_line_data$year,SP_Y_Returns$market_return,type="l",col="green")
+write.csv(AD_line_data,file="Tech_AD_Line_data.csv")
+```
+
+Companies beating the market  
+```{r}
+SP_Companies_per_year=as.data.frame(table(SP_Y_Returns$year))
+SP_Companies_per_year=rename(SP_Companies_per_year,year = `Var1`, companies = `Freq`)
+
+beat_the_market=as.data.frame(table(subset(SP_Y_Returns,yearly_return>market_return)$year))
+beat_the_market=rename(beat_the_market, year = `Var1`, winning_companies = `Freq`)
+
+less_than_market=as.data.frame(table(subset(SP_Y_Returns,yearly_return<market_return)$year))
+less_than_market=rename(less_than_market,year = `Var1`, losing_companies = `Freq`)
+
+line_data=merge(beat_the_market,less_than_market,by.x=1, by.y =1)
+line_data$total=SP_Companies_per_year$companies
+line_data$percWin=line_data$winning_companies/line_data$total
+line_data$percLose=line_data$losing_companies/line_data$total
+line_data$WinLoseDiff=line_data$winning_companies-line_data$losing_companies
+
+
+```
+Market Cap Data
+```{r}
+SP_marketCap <- read.csv("~/Desktop/S&P marketCap.csv", stringsAsFactors = FALSE, na.strings = "n/a", header=TRUE)
+View(SP_marketCap)
+
+MarketCap=reshape(SP_marketCap,varying=c("X1987","X1988","X1989","X1990","X1991","X1992","X1993","X1994","X1995","X1996","X1997","X1998","X1999","X2000","X2001","X2002","X2003","X2004","X2005","X2006","X2007","X2008","X2009","X2010","X2011","X2012","X2013","X2014","X2015"),v.names="market_cap",timevar = "year",times=c("1987","1988","1989","1990","1991","1992","1993","1994","1995","1996","1997","1998","1999","2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015"),direction = "long")
+MarketCap=MarketCap[order(MarketCap$company,decreasing = FALSE),]
+MarketCap=subset(MarketCap,market_cap != "N/A")
+```
+
+
+
+#Junk Code
+NYSE Data Summary
+```{r}
+# Calculating Annual Returns by Summing Daily Returns per year 
+Returns <- 
+  NYSE %>% 
+  arrange(company, date) %>%
+  group_by(company) %>%
+  mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
+  mutate(year = lubridate::year(date)) %>%
+  group_by(company, year) %>%
+  summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) %>%
+  Returns=Returns[order(Returns$yearly_return,decreasing=TRUE),] %>%
+  Returns=Returns[order(Returns$year,decreasing=TRUE),]
+ # calculating 5-year return
+number_of_years=5
+counter=0
+for(i in (1986:2015)){
+  data=Returns[order(Returns$company),]
+  group_by(data,company)
+  compTable=as.data.frame(table(data$company))
+  compTable=rename(compTable,company= `Var1`, company_years = `Freq`)
+  data=merge(data,compTable,by.x=1,by.y=1)
+  
+  first5=subset(Returns,Returns$year<1991)
+  fiveYear_Return <-
+    first5=first5[order(first5$company),] %>%
+    group_by(company,year) %>%
+    summarise(fiveYear_Return=sum(yearly_returns))
+    
+  while(counter<5){
+    
+  }
+}
+  
+#Calculating Market Returns
+MktReturn<-
+  subset(Returns,is.finite(Returns$yearly_return))%>%
+  group_by(year)%>%
+  summarise(Market_Return=sum(yearly_return))
+
+# Merging both returns in one dataset
+#NYSEYearly=merge(Returns,MktReturn,by.x=2,by.y=1)
+NYSEYearly=merge(Returns,NYSE_companies,by.x = 2,by.y = 1)
+# Sorting Data by Yearly Returns/Year
+NYSEYearly=NYSEYearly[order(NYSEYearly$yearly_return,decreasing = TRUE),]
+NYSEYearly=NYSEYearly[order(NYSEYearly$year,decreasing = TRUE),]
+write.csv(NYSEYearly,file="NYSE_Returns1.csv")
+# Percentage of Market Return/Company 
+NYSEYearly$return_ratio=NYSEYearly$yearly_return/NYSEYearly$Market_Return
+Positive_Returns=subset(NYSEYearly,(yearly_return>0))
+Positive_MktReturn=subset(Positive_Returns,(return_ratio>0))
+
+Negative_MktReturn=subset(Positive_Returns,(return_ratio<0))
+### Ask about it. ####
+
+
+#"Number of companies with annual returns adding up to 10% of Market Returns"
+group_by(Positive_MktReturn,year)
+
+
+
+
+companies=c()
+year=c()
+percent=0.1
+for(i in c(1986:2015)){
+  n=0
+  number_of_companies=0
+  year=c(year,i)
+  term=which(Positive_MktReturn$year==i) # Returns the list of indexs of the year i
+  term=term[1]
+  while(n<percent){
+    group_by(Positive_MktReturn,year)
+    n=n+Positive_MktReturn$return_ratio[term]
+    print(n)
+    number_of_companies=number_of_companies+1
+    term=term+1
+  }
+  companies=c(companies,number_of_companies)
+}
+comp=data.frame(companies,year)
+
+# get company info using the indexes in comp
+
+
+```
+
+```{r}
+
+```
+
