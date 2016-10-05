@@ -32,9 +32,9 @@ Yearly_returns <-
   summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) 
   
 
-NYSE_companies <- read.csv("/Users/Momo/Desktop/Honors-/NYSE_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+NYSE_companies <- read.csv("Data/NYSE_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
 
-Yearly_returns <- 
+Yearly_returns <-  
   Yearly_returns %>%
   left_join(NYSE_companies %>% select(company = Symbol, market_cap_2015 = MarketCap, Sector, Industry,IPOyear,Name)) 
 
@@ -80,7 +80,7 @@ Yearly_returns <-
   summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) 
   
 
-NASDAQ_companies <- read.csv("~/Desktop/Honors-/NASDAQ_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+NASDAQ_companies <- read.csv("Data/NASDAQ_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
 
 Yearly_returns <- 
   Yearly_returns %>%
@@ -117,7 +117,7 @@ Yearly_returns <-
   summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) 
   
 
-SP_500_companies <- read.csv("/Users/Momo/Desktop/Honors-/Data/S&P 500_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+SP_500_companies <- read.csv("Data/S&P 500_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
 
 Yearly_returns <- 
   Yearly_returns %>%
