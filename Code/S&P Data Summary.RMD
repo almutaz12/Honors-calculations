@@ -1,0 +1,193 @@
+
+# Market Return as SP_500 Index return
+```{r}
+SP_500_Index=read.csv("Data/S&P500 INDEX.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+SP_Y_Index <- 
+  SP_500_Index[order(SP_500_Index$Date,decreasing = FALSE),] %>% 
+  mutate(daily_return = percentage_change(Adj.Close, lag = 1)) %>%
+  mutate(year = lubridate::year(Date)) %>%
+  group_by(year) %>%
+  summarise(market_return = prod(1 + daily_return) - 1, ndays = n()) 
+  Market_Return=subset(SP_Y_Index,! is.na(SP_Y_Index$market_return))
+  Market_Return=rename(Market_Return, days_per_year= `ndays`)
+```
+
+#Market Cap Data
+```{r}
+SP_marketCap <- read.csv("Data/S&P marketCap.csv", stringsAsFactors = FALSE, na.strings = "n/a", header=TRUE)
+
+
+MarketCap=reshape(SP_marketCap,varying=c("X1987","X1988","X1989","X1990","X1991","X1992","X1993","X1994","X1995","X1996","X1997","X1998","X1999","X2000","X2001","X2002","X2003","X2004","X2005","X2006","X2007","X2008","X2009","X2010","X2011","X2012","X2013","X2014","X2015"),v.names="market_cap",timevar = "year",times=c("1987","1988","1989","1990","1991","1992","1993","1994","1995","1996","1997","1998","1999","2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015"),direction = "long")
+MarketCap=MarketCap[order(MarketCap$company,decreasing = FALSE),]
+MarketCap=subset(MarketCap,market_cap != "N/A")
+```
+
+# calculating daily returns for SP_500 and merging market cap and returns data. 
+```{r}
+load("Data/SP_500_Stock_Data.Rda")
+Yearly_returns <- 
+  SP_500 %>% 
+  arrange(company, date) %>%
+  group_by(company) %>%
+  mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
+  mutate(year = lubridate::year(date)) %>%
+  group_by(company, year) %>%
+  summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) 
+  
+
+SP_500_companies <- read.csv("Data/S&P 500_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+
+Yearly_returns <- 
+  Yearly_returns %>%
+  left_join(SP_500_companies %>% select(company = Symbol, Sector,Name)) 
+
+  Yearly_returns=Yearly_returns[order(Yearly_returns$yearly_return,decreasing=TRUE),]
+  Yearly_returns=Yearly_returns[order(Yearly_returns$year,decreasing=TRUE),]
+  SP_Y_Returns=subset(Yearly_returns,!is.na(Yearly_returns$yearly_return))
+#  Merging data SP Yearly Returns data with Market Returns and Market Cap Data.
+   SP_Y_Returns=merge(SP_Y_Returns,Market_Return,by.x=2,by.y=1)
+   SP_Y_Returns=merge(SP_Y_Returns,MarketCap,by=c("company","year"))
+  
+#  Creating new variables 
+  SP_Y_Returns$market_cap=as.numeric(SP_Y_Returns$market_cap)
+  Total_Market_Cap=aggregate(market_cap ~ year, SP_Y_Returns, FUN=sum)
+  Total_Market_Cap=rename(Total_Market_Cap,total_market_cap=`market_cap`)
+  SP_Y_Returns=merge(SP_Y_Returns,Total_Market_Cap,by=c("year"))
+  
+  SP_Y_Returns=SP_Y_Returns[order(SP_Y_Returns$market_cap,decreasing=TRUE),]
+  SP_Y_Returns=SP_Y_Returns[order(SP_Y_Returns$year,decreasing=TRUE),]
+  SP_Y_Returns$Market_Weight=SP_Y_Returns$market_cap/SP_Y_Returns$total_market_cap
+# Removing duplicate columns from data sets and renameing others. 
+  SP_Y_Returns$Name.y=NULL
+  SP_Y_Returns$Sector.y=NULL
+  SP_Y_Returns$id=NULL
+  SP_Y_Returns$ndays=NULL
+  SP_Y_Returns=rename(SP_Y_Returns,Sector=`Sector.x`,Name=`Name.x`)
+  
+  #write.csv(SP_Y_Returns,file="SP500_Y_returns.csv")
+
+```
+
+
+```{r}
+#"Number of companies with Market Weight adding up to 10% of Market-cap"
+companies=c()
+year=c()
+percent=0.2
+for(i in c(1987:2015)){
+  n=0
+  number_of_companies=0
+  year=c(year,i)
+  term=which(SP_Y_Returns$year==i) # Returns the list of indexs of the year i
+  term=term[1]
+  while(n<percent){
+    n=n+SP_Y_Returns$Market_Weight[term]
+    print(n)
+    number_of_companies=number_of_companies+1
+    print(number_of_companies)
+    term=term+1
+  }
+  companies=c(companies,number_of_companies)
+}
+
+
+Top10=data.frame(companies,year)
+Top10=rename(Top10,top10=`companies`)
+
+# change percent to 0.2 then re run the loop and the below code.
+Top20=data.frame(companies,year)
+Top20=rename(Top20,top20=`companies`)
+
+# Merging top10 and top20 and calcualting their percentage out of the total index
+total_companies=as.data.frame(table(SP_Y_Returns$year))
+total_companies=rename(total_companies,year=`Var1`,companies=`Freq`)
+
+TopComps=merge(Top10,Top20)
+
+marketShare=merge(TopComps,total_companies)
+marketShare$top10_ratio=marketShare$top10/marketShare$companies
+marketShare$top20_ratio=marketShare$top20/marketShare$companies
+
+# list of companies adding up to 10% market share using Top10. "Use Top20 for top 20%"
+Comps=c()
+company=c()
+for(i in 1:length(Top10$year)){
+    print(i)
+    print(Top10$year[i])
+    term=which(SP_Y_Returns$year==Top10$year[i])
+    print(Top10$top10[i])
+    Comps=SP_Y_Returns[term[1:Top10$top10[i]],]
+    company=rbind(company,Comps)
+    }
+Top10_Y=company[order(company$year,decreasing=TRUE),]  
+write.csv(Top10_Y,file="S&P_Top10%")
+
+View(table(companies$year,companies$Sector))
+  
+
+```
+
+#S&P Tech Companies with higher return than industry average
+```{r}
+#"Advance_decline Line calculation " " AD= (#winning companies-#of losing companies) +AD(t-1)"
+
+# Total number of companies per year 
+SP_Companies_per_year=as.data.frame(table(SP_Y_Returns$year))
+SP_Companies_per_year=rename(SP_Companies_per_year,year = `Var1`, total_winning = `Freq`)
+
+
+
+# Number of companies with yearly return>0 per year
+Tech_comps=as.data.frame((subset(SP_Y_Returns,Sector=="Information Technology" | Sector=="Technology")))
+techPerYear=as.data.frame(table(Tech_comps$year))
+techPerYear$total=SP_Companies_per_year$total_winning
+techPerYear$techPerc=techPerYear$Freq/techPerYear$total
+techPerYear=rename(techPerYear,year=`Var1`, tech=`Freq`)
+
+Tech_win=as.data.frame(table(subset(Tech_comps,yearly_return>mean(yearly_return))$year))
+Tech_win=rename(Tech_win,year = `Var1`, winning = `Freq`)
+
+# Number of companies with yearly return>0 per year
+SP_Losing_comps=as.data.frame(table(subset(Tech_comps,yearly_return<mean(yearly_return))$year))
+SP_Losing_comps=rename(SP_Losing_comps,year = `Var1`, losing = `Freq`)
+
+# Merging above tables and summarizing it to create data for AD calculations 
+AD_line_data=merge(Tech_win,SP_Losing_comps,by.x=1, by.y =1)
+#AD_line_data$total=SP_Companies_per_year$total_winning
+#AD_line_data$percWin=AD_line_data$winning/AD_line_data$total
+#AD_line_data$percLose=AD_line_data$losing/AD_line_data$total
+AD_line_data$WinLoseDiff=AD_line_data$winning-AD_line_data$losing
+
+# Calculating AD_line 
+AD_line_data$AD_line[1]=AD_line_data$WinLoseDiff[1]
+for(i in 2:nrow(AD_line_data)){
+  AD_line_data$AD_line[i]=AD_line_data$WinLoseDiff[i]+AD_line_data$AD_line[i-1]
+}
+plot(AD_line_data$year,AD_line_data$AD_line,main="Tech Industry Advance/Decline Line",xlab="Years",Ylab="AD_line(#win-#lost+AD(t-1) *t=Time",type="l",col="red")
+lines(AD_line_data$year,AD_line_data$AD_line,type="l",col="red")
+
+plot(AD_line_data$year,AD_line_data$WinLoseDiff,main="difference between winning and losing tech companies ",xlab="Years",Ylab="win-lose")
+lines(AD_line_data$year,AD_line_data$WinLoseDiff,type="l",col="red")
+
+plot(AD_line_data$year,Market_Return$market_return,type="l",col="green")
+lines(AD_line_data$year,SP_Y_Returns$market_return,type="l",col="green")
+write.csv(AD_line_data,file="Tech_AD_Line_data.csv")
+```
+
+Companies beating the market return  
+```{r}
+SP_Companies_per_year=as.data.frame(table(SP_Y_Returns$year))
+SP_Companies_per_year=rename(SP_Companies_per_year,year = `Var1`, companies = `Freq`)
+
+beat_the_market=as.data.frame(table(subset(SP_Y_Returns,yearly_return>market_return)$year))
+beat_the_market=rename(beat_the_market, year = `Var1`, winning_companies = `Freq`)
+
+less_than_market=as.data.frame(table(subset(SP_Y_Returns,yearly_return<market_return)$year))
+less_than_market=rename(less_than_market,year = `Var1`, losing_companies = `Freq`)
+
+line_data=merge(beat_the_market,less_than_market,by.x=1, by.y =1)
+line_data$total=SP_Companies_per_year$companies
+line_data$percWin=line_data$winning_companies/line_data$total
+line_data$percLose=line_data$losing_companies/line_data$total
+line_data$WinLoseDiff=line_data$winning_companies-line_data$losing_companies
+```
