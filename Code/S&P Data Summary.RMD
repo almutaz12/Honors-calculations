@@ -1,5 +1,5 @@
 
-# Market Return as SP_500 Index return
+ Market Return as SP_500 Index return
 ```{r}
 SP_500_Index=read.csv("Data/S&P500 INDEX.csv", stringsAsFactors = FALSE, na.strings = "n/a")
 SP_Y_Index <- 
@@ -12,7 +12,7 @@ SP_Y_Index <-
   Market_Return=rename(Market_Return, days_per_year= `ndays`)
 ```
 
-#Market Cap Data
+Market Cap Data
 ```{r}
 SP_marketCap <- read.csv("Data/S&P marketCap.csv", stringsAsFactors = FALSE, na.strings = "n/a", header=TRUE)
 
@@ -22,7 +22,7 @@ MarketCap=MarketCap[order(MarketCap$company,decreasing = FALSE),]
 MarketCap=subset(MarketCap,market_cap != "N/A")
 ```
 
-# calculating daily returns for SP_500 and merging market cap and returns data. 
+calculating daily returns for SP_500 and merging market cap and returns data. 
 ```{r}
 load("Data/SP_500_Stock_Data.Rda")
 Yearly_returns <- 
@@ -68,9 +68,9 @@ Yearly_returns <-
 
 ```
 
-
+"Number of companies with Market Weight adding up to 10% of Market-cap"
 ```{r}
-#"Number of companies with Market Weight adding up to 10% of Market-cap"
+
 companies=c()
 year=c()
 percent=0.2
@@ -127,7 +127,7 @@ View(table(companies$year,companies$Sector))
 
 ```
 
-#S&P Tech Companies with higher return than industry average
+S&P Tech Companies with higher return than industry average
 ```{r}
 #"Advance_decline Line calculation " " AD= (#winning companies-#of losing companies) +AD(t-1)"
 
