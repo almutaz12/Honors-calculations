@@ -21,7 +21,7 @@ percentage_change=function(x,lag=1){
 calculating daily returns for NYSE and merging sectors and industry data. 
 ```{r}
 
-load("~/Desktop/Honors-/NYSE_Stock_Data.Rda")
+load("Data/NYSE_Stock_Data.Rda")
 Yearly_returns <- 
   NYSE %>% 
   arrange(company, date) %>%
@@ -69,7 +69,7 @@ Table_1 <-
 
 # calculating daily returns for NASDAQ and merging sectors and industry data. 
 ```{r}
-load("~/Desktop/Honors-/NASDAQ_Stock_Data.Rda")
+load("Data/NASDAQ_Stock_Data.Rda")
 Yearly_returns <- 
   NASDAQ %>% 
   arrange(company, date) %>%
@@ -106,7 +106,7 @@ Yearly_returns <-
 
 # calculating daily returns for SP_500 and merging sectors and industry data. 
 ```{r}
-load("~/Desktop/Honors-/Data/SP_500_Stock_Data.Rda")
+load("Data/SP_500_Stock_Data.Rda")
 Yearly_returns <- 
   SP_500 %>% 
   arrange(company, date) %>%
@@ -127,14 +127,33 @@ Yearly_returns <-
   Yearly_returns=Yearly_returns[order(Yearly_returns$year,decreasing=TRUE),]
   SP_Y_Returns=subset(Yearly_returns,! is.na(Yearly_returns$yearly_return))
   SP_Y_Returns=merge(SP_Y_Returns,Market_Return,by.x=2,by.y=1)
-   SP_Y_Returns=merge(SP_Y_Returns,MarketCap,by.x=2,by.y=1)
-  ##############
+  SP_Y_Returns=merge(SP_Y_Returns,MarketCap,by=c("company","year"))
+  
+  SP_Y_Returns$market_cap=as.numeric(SP_Y_Returns$market_cap)
+  
+  Total_Market_Cap=aggregate(market_cap ~ year, SP_Y_Returns, FUN=sum)
+  Total_Market_Cap=rename(Total_Market_Cap,total_market_cap=`market_cap`)
+  SP_Y_Returns=merge(SP_Y_Returns,Total_Market_Cap,by=c("year"))
+  
+  SP_Y_Returns=SP_Y_Returns[order(SP_Y_Returns$market_cap,decreasing=TRUE),]
+  SP_Y_Returns=SP_Y_Returns[order(SP_Y_Returns$year,decreasing=TRUE),]
+  
+  SP_Y_Returns$Market_Weight=SP_Y_Returns$market_cap/SP_Y_Returns$total_market_cap
+  
+  SP_Y_Returns$Name.y=NULL
+  SP_Y_Returns$Sector.y=NULL
+  SP_Y_Returns$id=NULL
+  SP_Y_Returns$ndays=NULL
+  SP_Y_Returns=rename(SP_Y_Returns,Sector=`Sector.x`,Name=`Name.x`)
+  #x=mutate(SP_Y_Returns,top_10 = percent_rank(Market_Weight) >= .90)
+  #write.csv(SP_Y_Returns,file="SP500_Y_returns.csv")
+
+   ##############
   Yearly_returns1 <- 
   SP_Y_Returns %>%
   group_by(year) %>%
   mutate(top_10 = percent_rank(yearly_return) >= .90)  
   
-  #write.csv(SP_Y_Returns,file="SP500_Y_returns.csv")
   
 #SP_companies <- read.csv("S&P 500_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
 #SP_sectors=merge(SP_500,companies,by.x=7,by.y=1)
@@ -146,7 +165,7 @@ Yearly_returns <-
 
 # Market Return as SP_500 Index return
 ```{r}
-SP_500_Index=read.csv("/Users/Momo/Desktop/Honors-/Data/S&P500 INDEX.csv", stringsAsFactors = FALSE, na.strings = "n/a")
+SP_500_Index=read.csv("Data/S&P500 INDEX.csv", stringsAsFactors = FALSE, na.strings = "n/a")
 SP_Y_Index <- 
   SP_500_Index[order(SP_500_Index$Date,decreasing = FALSE),] %>% 
   mutate(daily_return = percentage_change(Adj.Close, lag = 1)) %>%
@@ -156,6 +175,17 @@ SP_Y_Index <-
   Market_Return=subset(SP_Y_Index,! is.na(SP_Y_Index$market_return))
   Market_Return=rename(Market_Return, days_per_year= `ndays`)
 ```
+
+Market Cap Data
+```{r}
+SP_marketCap <- read.csv("~/Desktop/S&P marketCap.csv", stringsAsFactors = FALSE, na.strings = "n/a", header=TRUE)
+
+
+MarketCap=reshape(SP_marketCap,varying=c("X1987","X1988","X1989","X1990","X1991","X1992","X1993","X1994","X1995","X1996","X1997","X1998","X1999","X2000","X2001","X2002","X2003","X2004","X2005","X2006","X2007","X2008","X2009","X2010","X2011","X2012","X2013","X2014","X2015"),v.names="market_cap",timevar = "year",times=c("1987","1988","1989","1990","1991","1992","1993","1994","1995","1996","1997","1998","1999","2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015"),direction = "long")
+MarketCap=MarketCap[order(MarketCap$company,decreasing = FALSE),]
+MarketCap=subset(MarketCap,market_cap != "N/A")
+```
+
 
 ```{r}
 
@@ -261,15 +291,6 @@ line_data$WinLoseDiff=line_data$winning_companies-line_data$losing_companies
 
 
 ```
-Market Cap Data
-```{r}
-SP_marketCap <- read.csv("~/Desktop/S&P marketCap.csv", stringsAsFactors = FALSE, na.strings = "n/a", header=TRUE)
-View(SP_marketCap)
-
-MarketCap=reshape(SP_marketCap,varying=c("X1987","X1988","X1989","X1990","X1991","X1992","X1993","X1994","X1995","X1996","X1997","X1998","X1999","X2000","X2001","X2002","X2003","X2004","X2005","X2006","X2007","X2008","X2009","X2010","X2011","X2012","X2013","X2014","X2015"),v.names="market_cap",timevar = "year",times=c("1987","1988","1989","1990","1991","1992","1993","1994","1995","1996","1997","1998","1999","2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015"),direction = "long")
-MarketCap=MarketCap[order(MarketCap$company,decreasing = FALSE),]
-MarketCap=subset(MarketCap,market_cap != "N/A")
-```
 
 
 
@@ -308,55 +329,58 @@ for(i in (1986:2015)){
   }
 }
   
-#Calculating Market Returns
-MktReturn<-
-  subset(Returns,is.finite(Returns$yearly_return))%>%
-  group_by(year)%>%
-  summarise(Market_Return=sum(yearly_return))
 
-# Merging both returns in one dataset
-#NYSEYearly=merge(Returns,MktReturn,by.x=2,by.y=1)
-NYSEYearly=merge(Returns,NYSE_companies,by.x = 2,by.y = 1)
-# Sorting Data by Yearly Returns/Year
-NYSEYearly=NYSEYearly[order(NYSEYearly$yearly_return,decreasing = TRUE),]
-NYSEYearly=NYSEYearly[order(NYSEYearly$year,decreasing = TRUE),]
-write.csv(NYSEYearly,file="NYSE_Returns1.csv")
-# Percentage of Market Return/Company 
-NYSEYearly$return_ratio=NYSEYearly$yearly_return/NYSEYearly$Market_Return
-Positive_Returns=subset(NYSEYearly,(yearly_return>0))
-Positive_MktReturn=subset(Positive_Returns,(return_ratio>0))
-
-Negative_MktReturn=subset(Positive_Returns,(return_ratio<0))
-### Ask about it. ####
 
 
 #"Number of companies with annual returns adding up to 10% of Market Returns"
-group_by(Positive_MktReturn,year)
-
-
-
-
 companies=c()
 year=c()
 percent=0.1
-for(i in c(1986:2015)){
+for(i in c(1987:2015)){
   n=0
   number_of_companies=0
   year=c(year,i)
-  term=which(Positive_MktReturn$year==i) # Returns the list of indexs of the year i
+  term=which(SP_Y_Returns$year==i) # Returns the list of indexs of the year i
   term=term[1]
   while(n<percent){
-    group_by(Positive_MktReturn,year)
-    n=n+Positive_MktReturn$return_ratio[term]
+    n=n+SP_Y_Returns$Market_Weight[term]
     print(n)
     number_of_companies=number_of_companies+1
+    print(number_of_companies)
     term=term+1
   }
   companies=c(companies,number_of_companies)
 }
-comp=data.frame(companies,year)
+comp10=data.frame(companies,year)
+comp10=rename(comp10,top10=`companies`)
+
+
+comp20=data.frame(companies,year)
+comp20=rename(comp20,top20=`companies`)
+
+total_companies=as.data.frame(table(SP_Y_Returns$year))
+total_companies=rename(total_companies,year=`Var1`,companies=`Freq`)
+
+compNum=merge(comp10,comp20)
+
+marketShare=merge(compNum,total_companies)
+marketShare$top10_ratio=marketShare$top10/marketShare$companies
+marketShare$top20_ratio=marketShare$top20/marketShare$companies
 
 # get company info using the indexes in comp
+topComps=c()
+companies=c()
+for(i in 1:length(comp10$year)){
+    print(i)
+    print(comp10$year[i])
+    term=which(SP_Y_Returns$year==comp10$year[i])
+    print(comp10$top10[i])
+    topComps=SP_Y_Returns[term[1:comp10$top10[i]],]
+    companies=rbind(companies,topComps)
+    }
+  
+
+  
 
 
 ```
