@@ -294,44 +294,8 @@ line_data$WinLoseDiff=line_data$winning_companies-line_data$losing_companies
 
 
 
-#Junk Code
-NYSE Data Summary
+
 ```{r}
-# Calculating Annual Returns by Summing Daily Returns per year 
-Returns <- 
-  NYSE %>% 
-  arrange(company, date) %>%
-  group_by(company) %>%
-  mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
-  mutate(year = lubridate::year(date)) %>%
-  group_by(company, year) %>%
-  summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) %>%
-  Returns=Returns[order(Returns$yearly_return,decreasing=TRUE),] %>%
-  Returns=Returns[order(Returns$year,decreasing=TRUE),]
- # calculating 5-year return
-number_of_years=5
-counter=0
-for(i in (1986:2015)){
-  data=Returns[order(Returns$company),]
-  group_by(data,company)
-  compTable=as.data.frame(table(data$company))
-  compTable=rename(compTable,company= `Var1`, company_years = `Freq`)
-  data=merge(data,compTable,by.x=1,by.y=1)
-  
-  first5=subset(Returns,Returns$year<1991)
-  fiveYear_Return <-
-    first5=first5[order(first5$company),] %>%
-    group_by(company,year) %>%
-    summarise(fiveYear_Return=sum(yearly_returns))
-    
-  while(counter<5){
-    
-  }
-}
-  
-
-
-
 #"Number of companies with annual returns adding up to 10% of Market Returns"
 companies=c()
 year=c()
@@ -379,13 +343,35 @@ for(i in 1:length(comp10$year)){
     companies=rbind(companies,topComps)
     }
   
-
+View(table(companies$year,companies$Sector))
   
-
 
 ```
 
+#Junk code
 ```{r}
+ # calculating 5-year return
+number_of_years=5
+counter=0
+for(i in (1986:2015)){
+  data=Returns[order(Returns$company),]
+  group_by(data,company)
+  compTable=as.data.frame(table(data$company))
+  compTable=rename(compTable,company= `Var1`, company_years = `Freq`)
+  data=merge(data,compTable,by.x=1,by.y=1)
+  
+  first5=subset(Returns,Returns$year<1991)
+  fiveYear_Return <-
+    first5=first5[order(first5$company),] %>%
+    group_by(company,year) %>%
+    summarise(fiveYear_Return=sum(yearly_returns))
+    
+  while(counter<5){
+    
+  }
+}
+  
+
 
 ```
 
