@@ -1,7 +1,7 @@
 # Honors
 
 My honors thesis at [Macalester College](http://macalester.edu) involves examining
-returns of DOW companies and the effect of the Internet on those returns.
+returns of S&P-500 companies and the effect of technology induced uncertainty on those returns.
 
 
 ## Abstract
