@@ -12,6 +12,47 @@ SP_Y_Index <-
   Market_Return=rename(Market_Return, days_per_year= `ndays`)
 ```
 
+calculating multiple years return
+```{r}
+za <- 
+  SP_500 %>% 
+  arrange(company, date) %>%
+  group_by(company) %>%
+  mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
+  mutate(year = lubridate::year(date)) %>%
+  group_by(company, year)
+  sa=as.data.frame(table(za$year,za$company))
+  sa=subset(sa,sa$Freq>0)
+  sa$cumSum=cumsum(sa$Freq)
+                 
+d<-za[sa$cumSum,]
+multiple_Y_Returns=c()
+list1=as.data.frame(table(d$company))
+list1=rename(list1,company=`Var1`,years=`Freq`)
+list1=subset(list1,years>3)
+for(i in 1:nrow(list1)){
+  temp=subset(d,d$company==list1$company[i])
+  print(i)
+  years=list1$years[i]
+  #if(years<=3){
+   # returns=as.data.frame(Delt(temp$adj_close,k=,type="arithmetic"))
+  #}
+  #else{
+   returns=as.data.frame(Delt(temp$adj_close,k=3,type="arithmetic"))
+  #} 
+  temp1=cbind(returns,temp$year)
+  temp1=rename(temp1,year=`temp$year`)
+  temp2=merge(temp1,temp,by.x="year",by.y="year")
+  multiple_Y_Returns=rbind(temp2,multiple_Y_Returns)
+}
+multiple_Y_Returns=merge(multiple_Y_Returns,SP_500_companies,by.x="company",by.y="Symbol")
+multiple_Y_Returns=subset(multiple_Y_Returns,! is.na(multiple_Y_Returns$Delt.3.arithmetic))
+multiple_Y_Returns=multiple_Y_Returns[order(multiple_Y_Returns$Delt.3.arithmetic,decreasing = TRUE),]
+multiple_Y_Returns=multiple_Y_Returns[order(multiple_Y_Returns$year,decreasing = TRUE),]
+
+```
+
+
 Market Cap Data
 ```{r}
 SP_marketCap <- read.csv("Data/S&P marketCap.csv", stringsAsFactors = FALSE, na.strings = "n/a", header=TRUE)
@@ -70,10 +111,13 @@ Yearly_returns <-
 
 "Number of companies with Market Weight adding up to 10% of Market-cap"
 ```{r}
-
+##
+#list of technology companies 
+TechComps=as.data.frame(subset(SP_Y_Returns,Sector=="Information Technology"|Sector=="Consumer Discretionary"))
+##
 companies=c()
 year=c()
-percent=0.2
+percent=0.4  # change as desired
 for(i in c(1987:2015)){
   n=0
   number_of_companies=0
@@ -97,34 +141,91 @@ Top10=rename(Top10,top10=`companies`)
 # change percent to 0.2 then re run the loop and the below code.
 Top20=data.frame(companies,year)
 Top20=rename(Top20,top20=`companies`)
+# change percent to 0.3 then re run the loop and the below code.
+Top30=data.frame(companies,year)
+Top30=rename(Top30,top30=`companies`)
+# change percent to 0.4 then re run the loop and the below code.
+Top40=data.frame(companies,year)
+Top40=rename(Top40,top40=`companies`)
 
 # Merging top10 and top20 and calcualting their percentage out of the total index
 total_companies=as.data.frame(table(SP_Y_Returns$year))
 total_companies=rename(total_companies,year=`Var1`,companies=`Freq`)
 
-TopComps=merge(Top10,Top20)
-
+TopComps=merge(TopComps,Top40)
 marketShare=merge(TopComps,total_companies)
 marketShare$top10_ratio=marketShare$top10/marketShare$companies
 marketShare$top20_ratio=marketShare$top20/marketShare$companies
+marketShare$top30_ratio=marketShare$top30/marketShare$companies
+marketShare$top40_ratio=marketShare$top40/marketShare$companies
 
-# list of companies adding up to 10% market share using Top10. "Use Top20 for top 20%"
+
+###########
+#Graphs
+plot(marketShare$year,marketShare$top20_ratio,type="l",col="green",ylim=c(0,0.08),main="Percentage of companies accounting for 10%,20%,30% and 40% of the market",sub="red=10%, green=20%, blue=30%, yellow=40%", xlab="Years", ylab="Percentage of companies")
+lines(marketShare$year,marketShare$top30_ratio,type="l",col="blue")
+lines(marketShare$year,marketShare$top10_ratio,type="l",col="red")
+lines(marketShare$year,marketShare$top40_ratio,type="l",col="yellow")
+
+
+plot(marketShare$year,marketShare$top20,type="l",col="green",ylim=c(0,40),main="number of companies accounting for 10%, 20% 30% and 40% of the market value over years",sub="red=10%, green=20%, blue=30%, yellow=40%", xlab="Years", ylab="number of companies")
+lines(marketShare$year,marketShare$top30,type="l",col="blue")
+lines(marketShare$year,marketShare$top10,type="l",col="red")
+lines(marketShare$year,marketShare$top40,type="l",col="yellow")
+
+
+```
+
+list of companies adding up to 10% market share using Top10. "Use Top20 for top 20%"
+
+```{r}
 Comps=c()
 company=c()
-for(i in 1:length(Top10$year)){
-    print(i)
-    print(Top10$year[i])
-    term=which(SP_Y_Returns$year==Top10$year[i])
-    print(Top10$top10[i])
-    Comps=SP_Y_Returns[term[1:Top10$top10[i]],]
+for(i in 1:length(Top40$year)){
+    term=which(SP_Y_Returns$year==Top40$year[i])
+    Comps=SP_Y_Returns[term[1:Top40$top40[i]],]
     company=rbind(company,Comps)
     }
-Top10_Y=company[order(company$year,decreasing=TRUE),]  
-write.csv(Top10_Y,file="S&P_Top10%")
+Top40_Y=company[order(company$year,decreasing=TRUE),]  
+View(Top40_Y)
+write.csv(Top40_Y,file="S&P_Top40%.csv")
 
-View(table(companies$year,companies$Sector))
-  
+x=as.data.frame(table(Top10_Y$year,Top10_Y$company))
+y=subset(x,x$Freq>0)
 
+
+#Graphics Sectors in the top 10% over time 
+sectors=as.data.frame(table(Top40_Y$Sector))
+sectors_Y=as.data.frame(table(Top40_Y$Sector,Top40_Y$year))
+
+# x1=subset(sectors_Y,sectors_Y$Var2=="Consumer Discretionary")
+ x2=subset(sectors_Y,sectors_Y$Var1=="Consumer Staples")
+ #x3=subset(sectors_Y,sectors_Y$Var1=="Energy")
+ x4=subset(sectors_Y,sectors_Y$Var1=="Financials")
+ x5=subset(sectors_Y,sectors_Y$Var1=="Health Care")
+ #x6=subset(sectors_Y,sectors_Y$Var1=="Industrials")
+ x7=subset(sectors_Y,sectors_Y$Var1=="Information Technology")
+ #x8=subset(sectors_Y,sectors_Y$Var2=="Telecommunications Services")
+
+par(mfrow=c(2,2))
+plot(x1$Var1,x2$Freq,col="red",main="Consumer Staples in top 40% per year",ylim=c(0,7),xlab="Years", ylab="Number of companies")
+lines(x1$Var1,x2$Freq,col="red")
+
+plot(x1$Var1,x4$Freq,col="green",main="Financials in top 40% per year",ylim=c(0,7),xlab="Years", ylab="Number of companies")
+lines(x1$Var1,x4$Freq,col="green")
+
+
+plot(x1$Var1,x5$Freq,col="yellow",main="Health Care in top 40% per year",ylim=c(0,7),xlab="Years", ylab="Number of companies")
+lines(x1$Var1,x5$Freq,col="yellow")
+
+plot(x1$Var1,x7$Freq,col="blue",main="Information Technology in top 40% per year",ylim=c(0,11),xlab="Years", ylab="Number of companies")
+lines(x1$Var1,x7$Freq,col="blue")
+
+
+#lines(x1$Var1,x8$Freq,col="yellow")
+
+
+# Get percentage of Technological companies compared to others
 ```
 
 calculate multiple years return. 
