@@ -127,6 +127,11 @@ View(table(companies$year,companies$Sector))
 
 ```
 
+calculate multiple years return. 
+```{r}
+
+```
+
 S&P Tech Companies with higher return than industry average
 ```{r}
 #"Advance_decline Line calculation " " AD= (#winning companies-#of losing companies) +AD(t-1)"
