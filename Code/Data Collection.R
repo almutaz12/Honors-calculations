@@ -87,7 +87,7 @@ honors_stocks <- function(symbols='F',
 #save(SP_500, file = "SP_500_Stock_Data.Rda")
 
 ########################################
-#S&P 500 Index
-#Symbols<-c("INDEXSP")
-#SP_Index<- honors_stocks(symbols = Symbols)
-#save(SP_500, file = "SP_500_Stock_Data.Rda")
+#S&P 500 historical companies 
+Symbols=SP_marketCap$company
+SP_H_Comp<- honors_stocks(symbols = Symbols)
+save(SP_H_Comp, file = "SP_H_Data.Rda")

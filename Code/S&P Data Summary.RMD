@@ -12,6 +12,85 @@ SP_Y_Index <-
   Market_Return=rename(Market_Return, days_per_year= `ndays`)
 ```
 
+Grouping by 10% of total companies and measuring group contribution 
+```{r}
+SP_Y_H=read.csv("SP_Y_H.csv")
+SP_Y_H=SP_Y_H[order(SP_Y_H$contribution,decreasing=TRUE),]
+SP_Y_H=SP_Y_H[order(SP_Y_H$year,decreasing=TRUE),]
+SP_C_Weigh<-
+  SP_Y_H %>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(contribution))
+SP_Y_H=merge(SP_Y_H,SP_C_Weigh,by.x="year",by.y = "year")
+
+ss=as.data.frame(table(SP_Y_H$year))
+xx=SP_Y_H
+percentage=0.1
+newData=c()
+for(i in 1:nrow(ss)){
+  numberOfC=ceiling(percentage*ss$Freq[i])
+  my_data=xx[which(xx$year==ss$Var1[i]),]
+  limitx=1
+  limity=numberOfC
+  n=1
+  while((ss$Freq[i]-limity)>numberOfC){
+    temp=my_data[limitx:limity,]
+    limitx=limity+1
+    limity=limity+numberOfC
+    chunkContribution=sum(temp$contribution)
+    year=1986+as.numeric(ss$Var1[i])
+    data=c(year,n,chunkContribution,nrow(temp))
+    n=n+1
+    newData=rbind(newData,data)
+  }
+    temp=my_data[limitx:ss$Freq[i],]
+    chunkContribution=sum(temp$contribution)
+    year=1986+as.numeric(ss$Var1[i])
+    data=c(year,n,chunkContribution,nrow(temp))
+    n=n+1
+    newData=rbind(newData,data)
+}
+newData=as.data.frame(newData)
+newData=rename(newData,year=`V1`,ChunkNum=`V2`,ChunkContribution=`V3`,Chunksize=`V4`)
+
+totalContribution=SP_Y_H[,c("year", "annualContribution")]
+totalContribution=unique(totalContribution[c("year", "annualContribution")])
+ContributionData=merge(newData,totalContribution,by.x="year",by.y="year")
+ContributionData$ChunkWeight=ContributionData$ChunkContribution/abs(ContributionData$annualContribution)
+#write.csv(ContributionData,file="SP_Y_H_Contribution.csv")
+
+
+# GraphsData
+Chunk1=subset(ContributionData,ChunkNum==1)
+Chunk2=subset(ContributionData,ChunkNum==2)
+Chunk3=subset(ContributionData,ChunkNum==3)
+Chunk4=subset(ContributionData,ChunkNum==4)
+Chunk5=subset(ContributionData,ChunkNum==5)
+Chunk6=subset(ContributionData,ChunkNum==6)
+Chunk7=subset(ContributionData,ChunkNum==7)
+Chunk8=subset(ContributionData,ChunkNum==8)
+Chunk9=subset(ContributionData,ChunkNum==9)
+
+par(mfrow=c(2,2))
+"Market Contribution by Chunk"
+"Top(10%,20%)-Bottom(10%,20%) Chunks and Market Contribution"
+
+
+plot(Chunk1$year,Chunk1$ChunkWeight,col="blue",main="Top(10%) Bottom(10%) Chunks and Market Contribution", sub="Top10%=Blue , Bottom10%=Red",ylim=c(-4,4),xlab="Years", ylab="Chunk Contribution")
+lines(Chunk1$year,Chunk1$ChunkWeight,col="blue")
+lines(Chunk2$year,Chunk2$ChunkWeight,col="green")
+lines(Chunk3$year,Chunk3$ChunkWeight,col="yellow")
+lines(Chunk4$year,Chunk4$ChunkWeight,col="brown")
+lines(Chunk5$year,Chunk5$ChunkWeight,col="pink")
+lines(Chunk6$year,Chunk6$ChunkWeight,col="mediumseagreen")
+lines(Chunk9$year,Chunk7$ChunkWeight,col="midnightblue")
+lines(Chunk8$year,Chunk8$ChunkWeight,col="olivedrab")
+lines(Chunk9$year,Chunk9$ChunkWeight,col="red")
+
+t
+
+```
+
 calculating multiple years return
 ```{r}
 za <- 
@@ -49,6 +128,14 @@ multiple_Y_Returns=merge(multiple_Y_Returns,SP_500_companies,by.x="company",by.y
 multiple_Y_Returns=subset(multiple_Y_Returns,! is.na(multiple_Y_Returns$Delt.3.arithmetic))
 multiple_Y_Returns=multiple_Y_Returns[order(multiple_Y_Returns$Delt.3.arithmetic,decreasing = TRUE),]
 multiple_Y_Returns=multiple_Y_Returns[order(multiple_Y_Returns$year,decreasing = TRUE),]
+Three_Y_Return=multiple_Y_Returns[,c(1,2,3,9,12,13)]
+Three_Y_Return=merge(Three_Y_Return,Market_Return,by=("year"))
+Three_Y_Return=merge(Three_Y_Return,MarketCap,by=c("company","year"))
+Three_Y_Return$market_cap=as.numeric(Three_Y_Return$market_cap)
+Three_Y_Return=Three_Y_Return[,c(1,2,3,4,5,6,7,8,11)]
+Three_Y_Return=merge(Three_Y_Return,Total_Market_Cap,by=c("year"))
+Three_Y_Return$Market_Weight=Three_Y_Return$market_cap/Three_Y_Return$total_market_cap
+Three_Y_Return$contribution=Three_Y_Return$Market_Weight*Three_Y_Return$Delt.3.arithmetic
 
 ```
 
@@ -63,11 +150,11 @@ MarketCap=MarketCap[order(MarketCap$company,decreasing = FALSE),]
 MarketCap=subset(MarketCap,market_cap != "N/A")
 ```
 
-calculating daily returns for SP_500 and merging market cap and returns data. 
+calculating daily returns for SP_500 and merging market cap and returns data.
 ```{r}
-load("Data/SP_500_Stock_Data.Rda")
+SP_H1=load("Data/SP_H_Data.Rda")
 Yearly_returns <- 
-  SP_500 %>% 
+  subset(SP_H,SP_H$volume!=0) %>% 
   arrange(company, date) %>%
   group_by(company) %>%
   mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
@@ -75,37 +162,38 @@ Yearly_returns <-
   group_by(company, year) %>%
   summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) 
   
-
 SP_500_companies <- read.csv("Data/S&P 500_companylist.csv", stringsAsFactors = FALSE, na.strings = "n/a")
 
 Yearly_returns <- 
   Yearly_returns %>%
-  left_join(SP_500_companies %>% select(company = Symbol, Sector,Name)) 
+  left_join(MarketCap %>% select(company,Sector,Name,market_cap)) 
 
   Yearly_returns=Yearly_returns[order(Yearly_returns$yearly_return,decreasing=TRUE),]
   Yearly_returns=Yearly_returns[order(Yearly_returns$year,decreasing=TRUE),]
-  SP_Y_Returns=subset(Yearly_returns,!is.na(Yearly_returns$yearly_return))
+  SP_Y_H=subset(Yearly_returns,!is.na(Yearly_returns$yearly_return))
+  SP_Y_H=subset(SP_Y_H,SP_Y_H$ndays>90)
 #  Merging data SP Yearly Returns data with Market Returns and Market Cap Data.
-   SP_Y_Returns=merge(SP_Y_Returns,Market_Return,by.x=2,by.y=1)
-   SP_Y_Returns=merge(SP_Y_Returns,MarketCap,by=c("company","year"))
+   SP_Y_H=merge(SP_Y_H,Market_Return,by.x=2,by.y=1)
+   SP_Y_H=merge(SP_Y_H,MarketCap,by=c("company","year"))
   
 #  Creating new variables 
-  SP_Y_Returns$market_cap=as.numeric(SP_Y_Returns$market_cap)
-  Total_Market_Cap=aggregate(market_cap ~ year, SP_Y_Returns, FUN=sum)
+  SP_Y_H$market_cap=as.numeric(SP_Y_H$market_cap)
+  Total_Market_Cap=aggregate(market_cap ~ year, SP_Y_H, FUN=sum)
   Total_Market_Cap=rename(Total_Market_Cap,total_market_cap=`market_cap`)
-  SP_Y_Returns=merge(SP_Y_Returns,Total_Market_Cap,by=c("year"))
+  SP_Y_H=merge(SP_Y_H,Total_Market_Cap,by=c("year"))
   
-  SP_Y_Returns=SP_Y_Returns[order(SP_Y_Returns$market_cap,decreasing=TRUE),]
-  SP_Y_Returns=SP_Y_Returns[order(SP_Y_Returns$year,decreasing=TRUE),]
-  SP_Y_Returns$Market_Weight=SP_Y_Returns$market_cap/SP_Y_Returns$total_market_cap
+ SP_Y_H=SP_Y_H[order(SP_Y_H$market_cap,decreasing=TRUE),]
+  SP_Y_H=SP_Y_H[order(SP_Y_H$year,decreasing=TRUE),]
+  SP_Y_H$Market_Weight=SP_Y_H$market_cap/SP_Y_H$total_market_cap
+  SP_Y_H$contribution=SP_Y_H$Market_Weight*SP_Y_H$yearly_return
 # Removing duplicate columns from data sets and renameing others. 
-  SP_Y_Returns$Name.y=NULL
-  SP_Y_Returns$Sector.y=NULL
-  SP_Y_Returns$id=NULL
-  SP_Y_Returns$ndays=NULL
-  SP_Y_Returns=rename(SP_Y_Returns,Sector=`Sector.x`,Name=`Name.x`)
+  SP_Y_H$Name.y=NULL
+  SP_Y_H$Sector.y=NULL
+  SP_Y_H$id=NULL
+  SP_Y_H$ndays=NULL
+  SP_Y_H=rename(SP_Y_H,Sector=`Sector.x`,Name=`Name.x`)
   
-  #write.csv(SP_Y_Returns,file="SP500_Y_returns.csv")
+  write.csv(SP_Y_H,file="SP_Y_H.csv")
 
 ```
 
@@ -228,10 +316,6 @@ lines(x1$Var1,x7$Freq,col="blue")
 # Get percentage of Technological companies compared to others
 ```
 
-calculate multiple years return. 
-```{r}
-
-```
 
 S&P Tech Companies with higher return than industry average
 ```{r}
