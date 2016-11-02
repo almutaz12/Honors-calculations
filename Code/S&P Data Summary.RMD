@@ -220,16 +220,14 @@ SP_Y_H246=company[order(company$year,decreasing=TRUE),]
 
 list of companies adding up to 10% market share using Chunks
 ```{r}
-SP_Y_H=SP_Y_H[order(SP_Y_H$contribution,decreasing = TRUE),]
 Comps=c()
 company=c()
 for(i in 1:length(Chunk1$year)){
-    term=which(SP_Y_H$year==Chunk1$year[i])
-    Comps=SP_Y_H[term[1:246],]
+    term=which(SP_Y_H246$year==Chunk1$year[i])
+    Comps=SP_Y_H246[term[1:20],]
     company=rbind(company,Comps)
 }
 Top10_Y=company[order(company$year,decreasing=TRUE),]  
-View(Top10_3YC)
 #write.csv(Top10_H,file="S&P_Top0%.csv")
 
 
@@ -239,116 +237,122 @@ View(Top10_3YC)
 sectors=as.data.frame(table(Top10_3YC$Sector))
 sectors_Y=as.data.frame(table(Top10_3YC$Sector,Top10_3YC$year))
 
- ConsumerDiscretionary=subset(Top10_5YC,Sector=="Consumer Discretionary")
+ ConsumerDiscretionary=subset(Top10_Y,Sector=="Consumer Discretionary")
  ConsumerStaples=subset(Top10_Y,Sector=="Consumer Staples")
- Energy=subset(Top10_5YC,Sector=="Energy")
- Financials=subset(Top10_5YC,Sector=="Financials")
- HealthCare=subset(Top10_5YC,Sector=="Health Care")
- Industrials=subset(Top10_5YC,Sector=="Industrials")
+ Energy=subset(Top10_Y,Sector=="Energy")
+ Financials=subset(Top10_Y,Sector=="Financials")
+ HealthCare=subset(Top10_Y,Sector=="Health Care")
+ Industrials=subset(Top10_Y,Sector=="Industrials")
  IT=subset(Top10_Y,Sector=="Information Technology")
- Telecommunications=subset(Top10_5YC,Sector=="Telecommunications")
- Materials=subset(Top10_5YC,Sector=="Materials")
+ Telecommunications=subset(Top10_Y,Sector=="Telecommunications")
+ Materials=subset(Top10_Y,Sector=="Materials")
 
  
  
 
   TotalMarket<-
-  SP_Y_H%>%
+  SP_Y_H246%>%
   group_by(year) %>%
-  summarise(annualContribution=sum(market_return))
+  summarise(annualContribution=sum(Contribution_W))
  
  
  Top10_Y_20<-
   Top10_Y%>%
   group_by(year) %>%
-  summarise(annualContribution=sum(contribution))
+  summarise(annualContribution=sum(Contribution_W))
  
-  ConsumerDiscretionary5_20<-
+  ConsumerDiscretionary_20<-
   ConsumerDiscretionary%>%
   group_by(year) %>%
-  summarise(annualContribution=sum(contribution))
+  summarise(annualContribution=sum(Contribution_W))
  
   IT_20<-
   IT %>%
   group_by(year) %>%
-  summarise(annualContribution=sum(contribution))
-  
-  IT_20=merge(IT_20,TotalMarket,by=c("year"))
-  IT_20$cc=IT_20$annualContribution.x/abs(IT_20$annualContribution.y)
+  summarise(annualContribution=sum(Contribution_W))
   
   
- ConsumerStaples5_20<-
+  
+ ConsumerStaples_20<-
   ConsumerStaples %>%
   group_by(year) %>%
-  summarise(annualContribution=sum(contribution))
+  summarise(annualContribution=sum(Contribution_W))
  
- HealthCare5_20<-
+ HealthCare_20<-
   HealthCare%>%
   group_by(year) %>%
-  summarise(annualContribution=sum(contribution))
+  summarise(annualContribution=sum(Contribution_W))
  
-  Financials5_20<-
+  Financials_20<-
   Financials%>%
   group_by(year) %>%
-  summarise(annualContribution=sum(contribution))
+  summarise(annualContribution=sum(Contribution_W))
   
-  Industrials5_20<-
+  Industrials_20<-
   Industrials%>%
   group_by(year) %>%
-  summarise(annualContribution=sum(contribution))
+  summarise(annualContribution=sum(Contribution_W))
   
-  Energy5_20<-
+  Energy_20<-
   Energy%>%
   group_by(year) %>%
-  summarise(annualContribution=sum(contribution))
+  summarise(annualContribution=sum(Contribution_W))
  
 par(mfrow=c(2,2))
 
-plot(Top10_C5_10$year,Top10_C5_10$annualContribution,col="red",main="Three Year Market Contribution of companies in top 10 & 20  per year",ylim=c(0,0.9),xlab="Years", ylab="Number of companies")
-lines(Top10_C5_10$year,Top10_C5_10$annualContribution,col="red")
+plot( Top10_Y_5$year, Top10_Y_5$annualContribution,col="red",main="Market Contribution of companies in top 5 per year",ylim=c(0,0.9),xlab="Years", ylab="Contribution of companies")
+lines(Top10_Y_5$year,Top10_Y_5$annualContribution,col="red")
+lines(Top10_Y_10$year,Top10_Y_10$annualContribution,col="blue")
+lines(Top10_Y_20$year,Top10_Y_20$annualContribution,col="green")
 abline(0.1,0,h=Top10_C5_10$year)
-lines(Top10_C5_20$year,Top10_C5_20$annualContribution,col="blue")
 
-plot(ConsumerDiscretionary5_10$year,ConsumerDiscretionary5_10$annualContribution,col="red",main="Five Year Contribution of Consumer Discretionary in top 10 & 20 companies per year",ylim=c(0,0.5),xlab="Years", ylab="Number of companies")
-lines(ConsumerDiscretionary5_10$year,ConsumerDiscretionary5_10$annualContribution,col="red")
-abline(0.18,0,h=ConsumerDiscretionary5_10$year)
-lines(ConsumerDiscretionary5_20$year,ConsumerDiscretionary5_20$annualContribution,col="blue")
+plot(ConsumerDiscretionary_5$year,ConsumerDiscretionary_5$annualContribution,col="red",main="Five Year Contribution of Consumer Discretionary in top 10 & 20 companies per year",ylim=c(0,0.22),xlab="Years", ylab="Contribution Percentage")
+lines(ConsumerDiscretionary_5$year,ConsumerDiscretionary_5$annualContribution,col="red")
+lines(ConsumerDiscretionary_10$year,ConsumerDiscretionary_10$annualContribution,col="blue")
+lines(ConsumerDiscretionary_20$year,ConsumerDiscretionary_20$annualContribution,col="green")
+abline(0.18,0,h=ConsumerDiscretionary_5$year)
 
 
-plot(ConsumerStaples5_10$year,ConsumerStaples5_10$annualContribution,col="red",main="Five Year Contribution of Consumer Staples companies in top 10 & 20  per year",ylim=c(0,0.5),xlab="Years", ylab="Number of companies")
-lines(ConsumerStaples5_10$year,ConsumerStaples5_10$annualContribution,col="red")
-lines(ConsumerStaples5_20$year,ConsumerStaples5_20$annualContribution,col="blue")
+plot(ConsumerStaples_5$year,ConsumerStaples_5$annualContribution,col="red",main=" Contribution of Consumer Staples companies in top 10 & 20  per year",ylim=c(0,0.2),xlab="Years", ylab="Contribution Percentage")
+lines(ConsumerStaples_5$year,ConsumerStaples_5$annualContribution,col="red")
+lines(ConsumerStaples_10$year,ConsumerStaples_10$annualContribution,col="blue")
+lines(ConsumerStaples_20$year,ConsumerStaples_20$annualContribution,col="green")
 
-plot(Energy5_10$year,Energy5_10$annualContribution,col="red",main="Five Year Contribution of Energy companies in top 10 & 20  per year",ylim=c(0,0.3),xlab="Years", ylab="Number of companies")
-lines(Energy5_20$year,Energy5_20$annualContribution,col="blue")
-lines(Energy5_10$year,Energy5_10$annualContribution,col="red")
-abline(0.05,0,h=Energy5_10$year)
+plot(Energy_5$year,Energy_5$annualContribution,col="red",main="Contribution of Energy companies in top 10 & 20  per year",ylim=c(0,0.15),xlab="Years", ylab="Contribution Percentage")
+lines(Energy_5$year,Energy_5$annualContribution,col="red")
+lines(Energy_10$year,Energy_10$annualContribution,col="blue")
+lines(Energy_20$year,Energy_20$annualContribution,col="green")
+#abline(0.05,0,h=Energy_10$year)
 
-plot(Financials5_10$year,Financials5_10$annualContribution,col="red",main="Five Year Contribution of Financial companies in top 10 & 20  per year",ylim=c(0,0.4),xlab="Years", ylab="Number of companies")
-lines(Financials5_20$year,Financials5_20$annualContribution,col="blue")
-lines(Financials5_10$year,Financials5_10$annualContribution,col="red")
+plot(Financials_5$year,Financials_5$annualContribution,col="red",main="Contribution of Financial companies in top 5 & 10  per year",ylim=c(0,0.2),xlab="Years", ylab="Contribution Percentage")
+lines(Financials_5$year,Financials_5$annualContribution,col="red")
+lines(Financials_10$year,Financials_10$annualContribution,col="blue")
+lines(Financials_20$year,Financials_20$annualContribution,col="green")
 abline(0.05,0,h=Financials5_10$year)
 
-plot(HealthCare5_10$year,HealthCare5_10$annualContribution,col="red",main="Five Year Contribution of Health Care companies in top 10 & 20  per year",ylim=c(0,0.4),xlab="Years", ylab="Number of companies")
-lines(HealthCare5_20$year,HealthCare5_20$annualContribution,col="blue")
-lines(HealthCare5_10$year,HealthCare5_10$annualContribution,col="red")
+plot(HealthCare_5$year,HealthCare_5$annualContribution,col="red",main=" Contribution of Health Care companies in top 10 & 20  per year",ylim=c(0,0.2),xlab="Years", ylab="Contribution Percentage")
+lines(HealthCare_5$year,HealthCare_5$annualContribution,col="red")
+lines(HealthCare_10$year,HealthCare_10$annualContribution,col="blue")
+lines(HealthCare_20$year,HealthCare_20$annualContribution,col="green")
+
 abline(0.1,0,h=HealthCare5_20$year)
 
-plot(Industrials5_10$year,Industrials5_10$annualContribution,col="red",main="Five Year Contribution of Industrial companies in top 10 & 20  per year",ylim=c(0,0.5),xlab="Years", ylab="Number of companies")
-lines(Industrials5_20$year,Industrials5_20$annualContribution,col="blue")
-lines(Industrials5_10$year,Industrials5_10$annualContribution,col="red")
+plot(Industrials_5$year,Industrials_5$annualContribution,col="red",main=" Contribution of Industrial companies in top 10 & 20  per year",ylim=c(0,0.1),xlab="Years", ylab="Contribution Percentage")
+lines(Industrials_5$year,Industrials_5$annualContribution,col="red")
+lines(Industrials_10$year,Industrials_10$annualContribution,col="blue")
+lines(Industrials_20$year,Industrials_20$annualContribution,col="green")
+
 abline(0.1,0,h=Industrials5_10$year)
 
-plot(IT_20$year,IT_20$cc,col="blue",main="One year Contribution of IT in top 5, 10 & 20 companies per year",ylim=c(0,0.01),xlab="Years", ylab="Contribution Percentage")
-lines(IT_20$year,IT_20$cc,col="blue")
+plot(IT_5$year,IT_5$annualContribution,col="blue",main="One year Contribution of IT in top 5, 10 & 20 companies per year",ylim=c(0,0.7),xlab="Years", ylab="Contribution Percentage")
+lines(IT_5$year,IT_5$annualContribution,col="red")
+lines(IT_10$year,IT_10$annualContribution,col="blue")
+lines(IT_20$year,IT_20$annualContribution,col="green")
 #abline(0.13,0,h=IT5_5$year)
-lines(IT_10$year,IT_10$cc,col="red")
-lines(IT_5$year,IT_5$cc,col="green")
-
-#lines(x1$Var1,x8$Freq,col="yellow")
 
 
-# Get percentage of Technological companies compared to others
+
+
 ```
 
 
