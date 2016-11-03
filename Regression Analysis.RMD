@@ -1,0 +1,20 @@
+---
+title: "Regression Analysis.RMD"
+output: html_document
+---
+Get Equal baskets of Data Ranked by Market Cap
+```{r}
+mainData=GetMain_Data(filePath = MainData_filepath)
+Top_246=getTop_n(data=mainData,n=246)
+```
+
+
+
+
+
+
+
+
+
+
+

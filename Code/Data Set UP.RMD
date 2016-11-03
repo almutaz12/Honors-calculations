@@ -2,22 +2,6 @@
 
 
 
-```{r include = TRUE}
-library(dplyr)
-library(tidyr)
-```
-
-function to calculate returns 
-```{r}
-percentage_change=function(x,lag=1){
-  n=length(x)
-  if (n < 2) return(rep(NA, n))
-  pchange = c((x[(1+lag):n]-x[1:(n-lag)])/x[1:(n-lag)],NA)
-  return(pchange)
-}
-```
-
-
 calculating daily returns for NYSE and merging sectors and industry data. 
 ```{r}
 

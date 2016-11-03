@@ -1,0 +1,150 @@
+
+Install needed packages 
+```{r include = TRUE}
+library(dplyr)
+library(tidyr)
+```
+
+function to calculate percentage change (return)
+```{r}
+percentage_change=function(x,lag=1){
+  n=length(x)
+  if (n < 2) return(rep(NA, n))
+  pchange = c((x[(1+lag):n]-x[1:(n-lag)])/x[1:(n-lag)],NA)
+  return(pchange)
+}
+```
+
+
+# Market Return 
+"SP_500 Index return"
+```{r}
+market_R_filePath="Data/S&P500 INDEX.csv"
+MarketReturn_Data=function(filePath){
+  
+  SP_500_Index=read.csv(filePath, stringsAsFactors = FALSE, na.strings = "n/a")
+  SP_Y_Index <- 
+    SP_500_Index[order(SP_500_Index$Date,decreasing = FALSE),] %>% 
+    mutate(daily_return = percentage_change(Adj.Close, lag = 1)) %>%
+    mutate(year = lubridate::year(Date)) %>%
+    group_by(year) %>%
+    summarise(market_return = prod(1 + daily_return) - 1, ndays = n()) 
+  Market_Return=subset(SP_Y_Index,! is.na(SP_Y_Index$market_return))
+  Market_Return=rename(Market_Return, days_per_year= `ndays`)
+}
+
+```
+
+
+#Market Cap Data
+This function takes market cap data and reshapes it
+```{r}
+MarketCap_filepath="Data/S&P marketCap.csv"
+MarketCap_Data=function(filePath){
+  SP_marketCap <- read.csv(filePath, stringsAsFactors = FALSE, na.strings = "n/a", header=TRUE)
+  
+  
+  MarketCap=reshape(SP_marketCap,varying=c("X1987","X1988","X1989","X1990","X1991","X1992","X1993","X1994","X1995","X1996","X1997","X1998","X1999","X2000","X2001","X2002","X2003","X2004","X2005","X2006","X2007","X2008","X2009","X2010","X2011","X2012","X2013","X2014","X2015"),v.names="market_cap",timevar = "year",times=c("1987","1988","1989","1990","1991","1992","1993","1994","1995","1996","1997","1998","1999","2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015"),direction = "long")
+  MarketCap=MarketCap[order(MarketCap$company,decreasing = FALSE),]
+  MarketCap=subset(MarketCap,market_cap != "N/A" & market_cap !="" )
+  MarketCap$year=as.numeric(MarketCap$year)
+  MarketCap
+}
+```
+
+# Cleaning Main Downloaded Data
+a. get Data
+b.Calculate Annual return
+c. merge with market cap and annual return datasets 
+d. output is ranked by market Cap
+```{r}
+MainData_filepath="SP_H.csv"
+GetMain_Data=function(filePath){
+  
+SP_H=read.csv(filePath, stringsAsFactors = FALSE, na.strings = "n/a", header=TRUE)
+Yearly_returns <- 
+  subset(SP_H,SP_H$volume!=0) %>% 
+  arrange(company, date) %>%
+  group_by(company) %>%
+  mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
+  mutate(year = lubridate::year(date)) %>%
+  group_by(company, year) %>%
+  summarise(yearly_return = prod(1 + daily_return) - 1, ndays = n()) 
+
+  Yearly_returns=Yearly_returns[order(Yearly_returns$yearly_return,decreasing=TRUE),]
+  Yearly_returns=Yearly_returns[order(Yearly_returns$year,decreasing=TRUE),]
+  SP_Y_H=subset(Yearly_returns,!is.na(Yearly_returns$yearly_return))
+  SP_Y_H=subset(SP_Y_H,SP_Y_H$ndays>90)
+#  Merging data SP Yearly Returns data with Market Returns and Market Cap Data.
+  marketCap=MarketCap_Data(filePath=MarketCap_filepath)
+  marketReturn=MarketReturn_Data(filePath = market_R_filePath)
+   SP_Y_H=merge(SP_Y_H,marketReturn,by=c("year"))
+   SP_Y_H=merge(SP_Y_H,marketCap,by=c("year","company"))
+  
+#  ordering by size and taking 246 comps baskets 
+  SP_Y_H$market_cap=as.numeric(SP_Y_H$market_cap)
+  SP_Y_H=SP_Y_H[order(SP_Y_H$market_cap, decreasing = TRUE),]
+  SP_Y_H=SP_Y_H[order(SP_Y_H$year, decreasing = TRUE),]
+}
+```
+
+
+Calculate total annual contribution (sum of abs individual contributions)
+a. calculate contribution weights with no direction 
+b. output is ranked by market contribution
+```{r}
+ TotalContribution=function(Data){
+    annualContribution=aggregate(abs(contribution)~year,Data, FUN=sum)
+    annualContribution=rename(annualContribution,Contribution_Y=`abs(contribution)`)
+    Data=merge(Data,annualContribution,by=c("year"))
+    Data$Contribution_W=abs(Data$contribution)/Data$Contribution_Y
+    Data=Data[order(Data$contribution,decreasing = TRUE),]
+    Data=Data[order(Data$year,decreasing = TRUE),]
+    Data
+  }
+```
+
+
+This function calculates the following:
+a. total market cap 
+b. companies weight 
+c. individual contribution 
+d.calls TotalContribution funcion 
+e.output is ranked by market contribution
+```{r}
+  TotalCap=function(Data){
+    Total_Market_Cap=aggregate(market_cap ~ year, Data, FUN=sum)
+    Total_Market_Cap=rename(Total_Market_Cap,total_market_cap=`market_cap`)
+    Data=merge(Data,Total_Market_Cap,by=c("year"))
+    Data$Market_Weight= Data$market_cap/ Data$total_market_cap
+    Data$contribution=Data$Market_Weight* Data$yearly_return
+    annualContribution=TotalContribution(Data)
+    annualContribution
+  }
+```
+
+This function takes in cleaned main_data and creates equal baskets of companies per year, ranked by size
+a. it calls on all previous function and outputs the final data set 
+b. final dataset is ranked by contribution 
+
+```{r}
+  
+  getTop_n=function(data,n){
+    Comps=c()
+    company=c()
+    years=as.data.frame(table(data$year))
+    years=rename(years,year=`Var1`)
+    for(i in 1:length(years$year)){
+      term=which(data$year==years$year[i])
+      Comps=data[term[1:n],]
+      company=rbind(company,Comps)
+    }
+    Top_n=company[order(company$year,decreasing=TRUE),]
+    #add total Market Cap
+    TotalMarket_Cap=TotalCap(Top_n)
+    TotalMarket_Cap
+  }
+```
+
+
+
