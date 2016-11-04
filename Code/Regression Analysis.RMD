@@ -1,0 +1,29 @@
+---
+title: "Regression analysis"
+output: html_document
+---
+
+
+Get Data
+```{r}
+mainData=GetMain_Data(filePath = MainData_filepath)
+Top_246=getTop_n(data=mainData,n=246)
+x= Get_Top_n(Top_246,50)
+x1=Get_Survival_Data(x)
+x2=Compute_Status(x1)
+x3=Internet_T(x2,2000)
+x4=recession_T(x3,recessionData)
+  
+
+```
+
+
+Survival Regression Data 
+```{r}
+RegressionData=PrepareSurvivalData(50,Top_246,2000,recessionData)
+```
+
+```{r}
+mod=lm(formula=Freq~year+Status+ recession+Internet, data=RegressionData)
+
+```

@@ -1,0 +1,135 @@
+---
+title: "Regression Data Functions"
+output: html_document
+---
+
+Prepare Data varying number of companies per year
+```{r}
+PrepareSurvivalData=function(Ncomps,data, Internet_StartDate, recessionData){
+  Top_Comps=Get_Top_n(data,Ncomps)
+  Survival_data=Get_Survival_Data(Top_Comps)
+  status=Compute_Status(Survival_data)
+  Internet_timeLine=Internet_T(status,Internet_StartDate)
+  Recession=recession_T(Internet_timeLine,recessionData)
+  
+  
+  return(Recession)
+}
+```
+
+
+#Prepare Data for Regression 
+a. function to get top_n 
+```{r}
+
+Get_Top_n=function(data,n){
+  Comps=c()
+  company=c()
+  years=as.data.frame(table(data$year))
+  years=rename(years,year=`Var1`)
+  for(i in 1:length(years$year)){
+    term=which(data$year==years$year[i])
+    Comps=data[term[1:n],]
+    company=rbind(company,Comps)
+  }
+  Top_n=company[order(company$year,decreasing=TRUE),]
+}
+
+
+
+```
+
+
+Calculate The survival of companies in top n
+```{r}
+
+Get_Survival_Data=function(data){
+  S_list=as.data.frame(table(data$year,data$company))
+  S_list=rename(S_list, year=`Var1`, company=`Var2`)
+  S_list$company=as.character(S_list$company)
+  S_list$Freq=as.numeric(S_list$Freq)
+  
+  S_companies=as.data.frame(table(data$company))
+  S_companies=rename(S_companies, company=`Var1`)
+  S_companies$company=as.character(S_companies$company)
+  data_S=data_frame("year"=numeric(),"company"=character(),"Freq"=numeric())
+  nCount=c()
+  comp_S=c()
+  year_S=c()
+  n=0
+  for (comp in 1:length(S_companies$company)){
+    S_comp=subset(S_list, company==S_companies$company[comp])
+    for (i in 1:length(S_comp$company)){
+      if (S_comp$Freq[i]==1){
+        n=n+1
+      }
+      else{
+        n=0
+      }
+      nCount=n
+      comp_S=S_comp$company[i]
+      year_S=as.numeric(S_comp$year[i])+1986
+      newRow=data_frame(c(year_S),c(comp_S),c(nCount))
+      data_S=rbind(data_S,newRow)
+    }
+    
+  }
+  data_S=rename(data_S, year=`c(year_S)`,company=`c(comp_S)`,Freq=`c(nCount)`)
+  
+  data_S
+}
+
+```
+
+
+Add status (exact(1) vs right censored(0)) 
+```{r}
+Compute_Status=function(survivalData){
+  status=numeric(nrow(survivalData))
+  for (i in 1:nrow(survivalData)){
+    if (survivalData$year[i]==2015 & survivalData$Freq[i]>0){
+      status[i]=0
+    }
+    else (status[i]=1)
+  }
+  survivalData$Status=status
+  survivalData
+}
+```
+
+Add Internet Time_line
+```{r}
+Internet_T=function(data,StartDate){
+  PrePost=numeric(nrow(data))
+  for (i in 1:nrow(data)){
+    if (data$year[i]>=StartDate){
+      PrePost[i]=1
+    }
+    else (PrePost[i]=0)
+  }
+  data$Internet=PrePost
+  data
+}
+```
+
+Add recession time line with 0 and duration of recession in months as values.
+```{r}
+year=c(1990,1991,2001,2007,2008,2009)
+recession_duration=c(6,2,8,1,12,6)
+recessionData=as.data.frame(cbind(year,recession_duration),)
+
+recession_T=function(data,Recession_data){
+  recession=numeric(nrow(data))
+  for (i in 1:nrow(data)){
+    
+    if (data$year[i] %in% Recession_data$year){
+      index=which(Recession_data$year==data$year[i])
+      recession[i]=Recession_data$recession_duration[index]
+    }
+    else (recession[i]=0)
+  }
+  data$recession=recession
+  data
+}
+```
+

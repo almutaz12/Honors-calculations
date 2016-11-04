@@ -1,0 +1,420 @@
+---
+title: "Junk Code"
+output: html_document
+---
+
+
+list of companies adding up to 10% market share using Chunks
+```{r}
+Comps=c()
+company=c()
+for(i in 1:length(Chunk1$year)){
+    term=which(SP_Y_H246$year==Chunk1$year[i])
+    Comps=SP_Y_H246[term[1:20],]
+    company=rbind(company,Comps)
+}
+Top10_Y=company[order(company$year,decreasing=TRUE),]  
+#write.csv(Top10_H,file="S&P_Top0%.csv")
+
+
+
+
+#Graphics Sectors in the top 10% over time 
+sectors=as.data.frame(table(Top10_Y$Sector))
+sectors_Y=as.data.frame(table(Top10_Y$Sector,Top10_Y$year))
+
+ ConsumerDiscretionary=subset(Top10_Y,Sector=="Consumer Discretionary")
+ ConsumerStaples=subset(Top10_Y,Sector=="Consumer Staples")
+ Energy=subset(Top10_Y,Sector=="Energy")
+ Financials=subset(Top10_Y,Sector=="Financials")
+ HealthCare=subset(Top10_Y,Sector=="Health Care")
+ Industrials=subset(Top10_Y,Sector=="Industrials")
+ IT=subset(Top10_Y,Sector=="Information Technology")
+ Telecommunications=subset(Top10_Y,Sector=="Telecommunications")
+ Materials=subset(Top10_Y,Sector=="Materials")
+
+ 
+ 
+
+  TotalMarket<-
+  SP_Y_H246%>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(Contribution_W))
+ 
+ 
+ Top10_Y_20<-
+  Top10_Y%>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(Contribution_W))
+ 
+  ConsumerDiscretionary_20<-
+  ConsumerDiscretionary%>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(Contribution_W))
+ 
+  IT_20<-
+  IT %>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(Contribution_W))
+  
+  
+  
+ ConsumerStaples_20<-
+  ConsumerStaples %>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(Contribution_W))
+ 
+ HealthCare_20<-
+  HealthCare%>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(Contribution_W))
+ 
+  Financials_20<-
+  Financials%>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(Contribution_W))
+  
+  Industrials_20<-
+  Industrials%>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(Contribution_W))
+  
+  Energy_20<-
+  Energy%>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(Contribution_W))
+ 
+par(mfrow=c(2,3))
+
+plot( Top10_Y_5$year, Top10_Y_5$annualContribution,col="red",main="Market Contribution",ylim=c(0,0.9),xlab="Years", ylab="Contribution of companies",sub="(red = top 5, blue= top 10, green = top 20)")
+lines(Top10_Y_5$year,Top10_Y_5$annualContribution,col="red")
+lines(Top10_Y_10$year,Top10_Y_10$annualContribution,col="blue")
+lines(Top10_Y_20$year,Top10_Y_20$annualContribution,col="green")
+grid(NA,5,lwd=2)
+
+plot(ConsumerDiscretionary_5$year,ConsumerDiscretionary_5$annualContribution,col="red",main="Contribution of Consumer Discretionary ",ylim=c(0,0.22),xlab="Years", ylab="Contribution Percentage",sub="(red = top 5, blue= top 10, green = top 20)")
+lines(ConsumerDiscretionary_5$year,ConsumerDiscretionary_5$annualContribution,col="red")
+lines(ConsumerDiscretionary_10$year,ConsumerDiscretionary_10$annualContribution,col="blue")
+lines(ConsumerDiscretionary_20$year,ConsumerDiscretionary_20$annualContribution,col="green")
+grid(NA,5,lwd=2)
+
+plot(ConsumerStaples_5$year,ConsumerStaples_5$annualContribution,col="red",main=" Contribution of Consumer Staples ",ylim=c(0,0.2),xlab="Years", ylab="Contribution Percentage",sub="(red = top 5, blue= top 10, green = top 20)")
+lines(ConsumerStaples_5$year,ConsumerStaples_5$annualContribution,col="red")
+lines(ConsumerStaples_10$year,ConsumerStaples_10$annualContribution,col="blue")
+lines(ConsumerStaples_20$year,ConsumerStaples_20$annualContribution,col="green")
+grid(NA,5,lwd=2)
+
+plot(Energy_5$year,Energy_5$annualContribution,col="red",main="Contribution of Energy",ylim=c(0,0.15),xlab="Years", ylab="Contribution Percentage", sub="(red = top 5, blue= top 10, green = top 20)")
+lines(Energy_5$year,Energy_5$annualContribution,col="red")
+lines(Energy_10$year,Energy_10$annualContribution,col="blue")
+lines(Energy_20$year,Energy_20$annualContribution,col="green")
+grid(NA,5,lwd=2)
+
+plot(Financials_5$year,Financials_5$annualContribution,col="red",main="Contribution of Financial",ylim=c(0,0.2),xlab="Years", ylab="Contribution Percentage",sub="(red = top 5, blue= top 10, green = top 20)")
+lines(Financials_5$year,Financials_5$annualContribution,col="red")
+lines(Financials_10$year,Financials_10$annualContribution,col="blue")
+lines(Financials_20$year,Financials_20$annualContribution,col="green")
+grid(NA,5,lwd=2)
+
+
+plot(HealthCare_5$year,HealthCare_5$annualContribution,col="red",main=" Contribution of Health Care",ylim=c(0,0.2),xlab="Years", ylab="Contribution Percentage", sub="(red = top 5, blue= top 10, green = top 20)")
+lines(HealthCare_5$year,HealthCare_5$annualContribution,col="red")
+lines(HealthCare_10$year,HealthCare_10$annualContribution,col="blue")
+lines(HealthCare_20$year,HealthCare_20$annualContribution,col="green")
+grid(NA,5,lwd=2)
+
+plot(Industrials_5$year,Industrials_5$annualContribution,col="red",main=" Contribution of Industrial companies in top 5, 10 & 20  per year",ylim=c(0,0.1),xlab="Years", ylab="Contribution Percentage",sub="(red = top 5, blue= top 10, green = top 20)")
+lines(Industrials_5$year,Industrials_5$annualContribution,col="red")
+lines(Industrials_10$year,Industrials_10$annualContribution,col="blue")
+lines(Industrials_20$year,Industrials_20$annualContribution,col="green")
+grid(NA,5,lwd=2)
+
+
+plot(IT_5$year,IT_5$annualContribution,col="blue",main="Contribution of IT ",ylim=c(0,0.5),xlab="Years", ylab="Contribution Percentage",sub="(red = top 5, blue= top 10, green = top 20)")
+lines(IT_5$year,IT_5$annualContribution,col="red")
+lines(IT_10$year,IT_10$annualContribution,col="blue")
+lines(IT_20$year,IT_20$annualContribution,col="green")
+grid(NA,5,lwd=2)
+#abline(0.13,0,h=IT5_5$year)
+
+```
+
+Advance_decline Line calculation 
+```{r}
+#"Advance_decline Line calculation " " AD= (#winning companies-#of losing companies) +AD(t-1)"
+# Total number of companies per year 
+Companies_per_year=as.data.frame(table(SP_Y_H246$year))
+Companies_per_year=rename(Companies_per_year,year = `Var1`, total_comps = `Freq`)
+
+# Number of companies with yearly return>0 per year
+Winning_comps=as.data.frame(table(subset(SP_Y_H246,yearly_return>0)$year))
+Winning_comps=rename(Winning_comps,year = `Var1`, winning = `Freq`)
+
+# Number of companies with yearly return>0 per year
+Losing_comps=as.data.frame(table(subset(SP_Y_H246,yearly_return<0)$year))
+Losing_comps=rename(Losing_comps,year = `Var1`, losing = `Freq`)
+
+# Merging above tables and summarizing it to create data for AD calculations 
+AD_line_data=merge(Winning_comps,Losing_comps,by.x=1, by.y =1)
+AD_line_data$total=Companies_per_year$total_comps
+AD_line_data$percWin=AD_line_data$winning/AD_line_data$total
+AD_line_data$percLose=AD_line_data$losing/AD_line_data$total
+AD_line_data$WinLoseDiff=AD_line_data$winning-AD_line_data$losing
+
+# Calculating AD_line 
+AD_line_data$AD_line[1]=AD_line_data$WinLoseDiff[1]
+for(i in 2:nrow(AD_line_data)){
+  AD_line_data$AD_line[i]=AD_line_data$WinLoseDiff[i]+AD_line_data$AD_line[i-1]
+}
+plot(AD_line_data$year,AD_line_data$AD_line,main="Advance/Decline Line",xlab="Years",Ylab="AD_line(#win-#lost+AD(t-1) *t=Time",type="l",col="red")
+lines(AD_line_data$year,AD_line_data$AD_line,type="l",col="red")
+
+plot(AD_line_data$year,AD_line_data$WinLoseDiff,main="difference between the number of winning and losing companies",xlab="Years",Ylab="win-lose")
+lines(AD_line_data$year,AD_line_data$WinLoseDiff,type="l",col="red")
+
+write.csv(AD_line_data,file="NYSE_AD_Line_data.csv")
+```
+```
+
+Companies beating the market return  
+```{r}
+SP_Companies_per_year=as.data.frame(table(SP_Y_Returns$year))
+SP_Companies_per_year=rename(SP_Companies_per_year,year = `Var1`, companies = `Freq`)
+
+beat_the_market=as.data.frame(table(subset(SP_Y_Returns,yearly_return>market_return)$year))
+beat_the_market=rename(beat_the_market, year = `Var1`, winning_companies = `Freq`)
+
+less_than_market=as.data.frame(table(subset(SP_Y_Returns,yearly_return<market_return)$year))
+less_than_market=rename(less_than_market,year = `Var1`, losing_companies = `Freq`)
+
+line_data=merge(beat_the_market,less_than_market,by.x=1, by.y =1)
+line_data$total=SP_Companies_per_year$companies
+line_data$percWin=line_data$winning_companies/line_data$total
+line_data$percLose=line_data$losing_companies/line_data$total
+line_data$WinLoseDiff=line_data$winning_companies-line_data$losing_companies
+```
+
+
+# Size
+"Number of companies with Market Weight adding up to 10% of Market-cap"
+```{r}
+##
+#list of technology companies 
+TechComps=as.data.frame(subset(SP_Y_Returns,Sector=="Information Technology"|Sector=="Consumer Discretionary"))
+##
+companies=c()
+year=c()
+percent=0.5  # change as desired
+for(i in c(1987:2015)){
+  n=0
+  number_of_companies=0
+  year=c(year,i)
+  term=which(SP_Y_H246$year==i) # Returns the list of indexs of the year i
+  term=term[1]
+  while(n<percent){
+    n=n+SP_Y_H246$Market_Weight[term]
+    print(n)
+    number_of_companies=number_of_companies+1
+    print(number_of_companies)
+    term=term+1
+  }
+  companies=c(companies,number_of_companies)
+}
+
+
+Top10P=data.frame(companies,year)
+Top10P=rename(Top10P,top10=`companies`)
+
+# change percent to 0.2 then re run the loop and the below code.
+Top20P=data.frame(companies,year)
+Top20P=rename(Top20P,top20=`companies`)
+# change percent to 0.3 then re run the loop and the below code.
+Top30P=data.frame(companies,year)
+Top30P=rename(Top30P,top30=`companies`)
+# change percent to 0.4 then re run the loop and the below code.
+Top40P=data.frame(companies,year)
+Top40P=rename(Top40P,top40=`companies`)
+
+Top50P=data.frame(companies,year)
+Top50P=rename(Top50P,top50=`companies`)
+
+# Merging top10 and top20 and calcualting their percentage out of the total index
+total_companies=as.data.frame(table(SP_Y_H246$year))
+total_companies=rename(total_companies,year=`Var1`,companies=`Freq`)
+TopComps=c()
+TopComps=rbind(TopComps,Top10P)
+TopComps=merge(TopComps,Top50P,by="year")
+marketShare=merge(TopComps,total_companies,by="year")
+marketShare$top10_ratio=marketShare$top10/marketShare$companies
+marketShare$top20_ratio=marketShare$top20/marketShare$companies
+marketShare$top30_ratio=marketShare$top30/marketShare$companies
+marketShare$top40_ratio=marketShare$top40/marketShare$companies
+marketShare$top50_ratio=marketShare$top50/marketShare$companies
+marketShare$top10gap=marketShare$top20-marketShare$top10
+marketShare$top20gap=marketShare$top30-marketShare$top20
+marketShare$top30gap=marketShare$top40-marketShare$top30
+marketShare$top40gap=marketShare$top50-marketShare$top40
+###########
+#Graphs
+par(mfrow=c(2,2))
+plot(marketShare$year,marketShare$top20_ratio,type="l",col="green",ylim=c(0,0.3),main="Percentage of companies accounting for 10%,20%,30% and 40% of the market",sub="red=10%, green=20%, blue=30%, yellow=40%, brown=50%", xlab="Years", ylab="Percentage of companies")
+lines(marketShare$year,marketShare$top30_ratio,type="l",col="blue")
+lines(marketShare$year,marketShare$top10_ratio,type="l",col="red")
+lines(marketShare$year,marketShare$top40_ratio,type="l",col="yellow")
+lines(marketShare$year,marketShare$top50_ratio,type="l",col="brown")
+grid(NA,5,lwd=2)
+
+plot(marketShare$year,marketShare$top20,type="l",col="green",ylim=c(0,100),main="number of companies accounting for 10%, 20% 30% and 40% of the market value over years",sub="red=10%, green=20%, blue=30%, yellow=40%", xlab="Years", ylab="number of companies")
+lines(marketShare$year,marketShare$top30,type="l",col="blue")
+lines(marketShare$year,marketShare$top10,type="l",col="red")
+lines(marketShare$year,marketShare$top40,type="l",col="yellow")
+
+
+
+plot(marketShare$year,marketShare$top20gap,type="l",col="green",ylim=c(0,50),main="top 20 and difference to top 30",sub="blue=top20, green= difference to top30", xlab="Years", ylab="number of companies")
+lines(marketShare$year,marketShare$top20,type="l",col="blue")
+abline(mean(marketShare$top20),0,h=marketShare$year)
+
+plot(marketShare$year,marketShare$top10gap,type="l",col="green",ylim=c(0,50),main="top 10 and difference to top 20",sub="blue=top10, green= difference to top20", xlab="Years", ylab="number of companies")
+lines(marketShare$year,marketShare$top10,type="l",col="blue")
+abline(mean(marketShare$top10),0,h=marketShare$year)
+
+plot(marketShare$year,marketShare$top30gap,type="l",col="green",ylim=c(0,50),main="top 30 and difference to top 40",sub="blue=top30, green= difference to top40", xlab="Years", ylab="number of companies")
+lines(marketShare$year,marketShare$top30,type="l",col="blue")
+abline(mean(marketShare$top30),0,h=marketShare$year)
+
+plot(marketShare$year,marketShare$top40gap,type="l",col="green",ylim=c(0,50),main="top 40 and difference to top 50",sub="blue=top40, green= difference to top50", xlab="Years", ylab="number of companies")
+lines(marketShare$year,marketShare$top40,type="l",col="blue")
+abline(mean(marketShare$top40),0,h=marketShare$year)
+
+```
+
+Grouping by 10% of total companies and measuring group contribution 
+```{r}
+SP_Y_H=read.csv("SP_Y_H.csv")
+SP_Y_H=SP_Y_H[order(SP_Y_H$contribution,decreasing=TRUE),]
+SP_Y_H=SP_Y_H[order(SP_Y_H$year,decreasing=TRUE),]
+SP_C_Weigh<-
+  SP_Y_H %>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(contribution))
+SP_Y_H=merge(SP_Y_H,SP_C_Weigh,by.x="year",by.y = "year")
+
+ss=as.data.frame(table(SP_Y_H$year))
+xx=SP_Y_H
+percentage=0.1
+newData=c()
+for(i in 1:nrow(ss)){
+  numberOfC=ceiling(percentage*ss$Freq[i])
+  my_data=xx[which(xx$year==ss$Var1[i]),]
+  limitx=1
+  limity=numberOfC
+  n=1
+  while((ss$Freq[i]-limity)>numberOfC){
+    temp=my_data[limitx:limity,]
+    limitx=limity+1
+    limity=limity+numberOfC
+    chunkContribution=sum(temp$contribution)
+    year=1986+as.numeric(ss$Var1[i])
+    data=c(year,n,chunkContribution,nrow(temp))
+    n=n+1
+    newData=rbind(newData,data)
+  }
+    temp=my_data[limitx:ss$Freq[i],]
+    chunkContribution=sum(temp$contribution)
+    year=1986+as.numeric(ss$Var1[i])
+    data=c(year,n,chunkContribution,nrow(temp))
+    n=n+1
+    newData=rbind(newData,data)
+}
+newData=as.data.frame(newData)
+newData=rename(newData,year=`V1`,ChunkNum=`V2`,ChunkContribution=`V3`,Chunksize=`V4`)
+
+totalContribution=SP_Y_H[,c("year", "annualContribution")]
+totalContribution=unique(totalContribution[c("year", "annualContribution")])
+ContributionData=merge(newData,totalContribution,by.x="year",by.y="year")
+ContributionData$ChunkWeight=ContributionData$ChunkContribution/abs(ContributionData$annualContribution)
+#write.csv(ContributionData,file="SP_Y_H_Contribution.csv")
+
+
+# GraphsData
+Chunk1=subset(ContributionData,ChunkNum==1)
+Chunk2=subset(ContributionData,ChunkNum==2)
+Chunk3=subset(ContributionData,ChunkNum==3)
+Chunk4=subset(ContributionData,ChunkNum==4)
+Chunk5=subset(ContributionData,ChunkNum==5)
+Chunk6=subset(ContributionData,ChunkNum==6)
+Chunk7=subset(ContributionData,ChunkNum==7)
+Chunk8=subset(ContributionData,ChunkNum==8)
+Chunk9=subset(ContributionData,ChunkNum==9)
+
+par(mfrow=c(2,2))
+"Market Contribution by Chunk"
+"Top(10%,20%)-Bottom(10%,20%) Chunks and Market Contribution"
+
+
+plot(Chunk1$year,Chunk1$ChunkWeight,col="blue",main="Top(10%) Bottom(10%) Chunks and Market Contribution", sub="Top10%=Blue , Bottom10%=Red",ylim=c(-4,4),xlab="Years", ylab="Chunk Contribution")
+lines(Chunk1$year,Chunk1$ChunkWeight,col="blue")
+lines(Chunk2$year,Chunk2$ChunkWeight,col="green")
+lines(Chunk3$year,Chunk3$ChunkWeight,col="yellow")
+lines(Chunk4$year,Chunk4$ChunkWeight,col="brown")
+lines(Chunk5$year,Chunk5$ChunkWeight,col="pink")
+lines(Chunk6$year,Chunk6$ChunkWeight,col="mediumseagreen")
+lines(Chunk9$year,Chunk7$ChunkWeight,col="midnightblue")
+lines(Chunk8$year,Chunk8$ChunkWeight,col="olivedrab")
+lines(Chunk9$year,Chunk9$ChunkWeight,col="red")
+
+t
+
+```
+
+calculating multiple years return
+```{r}
+za <- 
+  subset(SP_H,SP_H$volume!=0)%>% 
+  arrange(company, date) %>%
+  group_by(company) %>%
+  mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
+  mutate(year = lubridate::year(date)) %>%
+  group_by(company, year)
+  sa=as.data.frame(table(za$year,za$company))
+  sa=subset(sa,sa$Freq>0)
+  sa$cumSum=cumsum(sa$Freq)
+                 
+d<-za[sa$cumSum,]
+multiple_Y_Returns=c()
+list1=as.data.frame(table(d$company))
+list1=rename(list1,company=`Var1`,years=`Freq`)
+list1=subset(list1,years>5)
+for(i in 1:nrow(list1)){
+  temp=subset(d,d$company==list1$company[i])
+  print(i)
+  years=list1$years[i]
+  #if(years<=3){
+   # returns=as.data.frame(Delt(temp$adj_close,k=,type="arithmetic"))
+  #}
+  #else{
+   returns=as.data.frame(Delt(temp$adj_close,k=5,type="arithmetic"))
+  #} 
+  temp1=cbind(returns,temp$year)
+  temp1=rename(temp1,year=`temp$year`)
+  temp2=merge(temp1,temp,by.x="year",by.y="year")
+  multiple_Y_Returns=rbind(temp2,multiple_Y_Returns)
+}
+multiple_Y_Returns=merge(multiple_Y_Returns,MarketCap,by=c("company","year"))
+multiple_Y_Returns=subset(multiple_Y_Returns,! is.na(multiple_Y_Returns$Delt.5.arithmetic))
+multiple_Y_Returns=rename(multiple_Y_Returns,fiveYearsR=`Delt.5.arithmetic`)
+multiple_Y_Returns=multiple_Y_Returns[order(multiple_Y_Returns$fiveYearsR,decreasing = TRUE),]
+multiple_Y_Returns=multiple_Y_Returns[order(multiple_Y_Returns$year,decreasing = TRUE),]
+Five_Y_Return=multiple_Y_Returns[,c(1,2,3,12,13,14)]
+#Three_Y_Return=merge(Three_Y_Return,Market_Return,by=("year")) 
+#Three_Y_Return=merge(Three_Y_Return,MarketCap,by=c("company","year"))
+Five_Y_Return$market_cap=as.numeric(Five_Y_Return$market_cap)
+#Three_Y_Return=Three_Y_Return[,c(1,2,3,4,5,6,7,8,11)]
+Five_Y_Return=merge(Five_Y_Return,Total_Market_Cap,by=c("year"))
+Five_Y_Return$Market_Weight=Five_Y_Return$market_cap/Five_Y_Return$total_market_cap
+Five_Y_Return$contribution=Five_Y_Return$Market_Weight*Five_Y_Return$fiveYearsR
+
+```
+
+

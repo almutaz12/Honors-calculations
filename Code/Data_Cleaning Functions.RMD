@@ -58,7 +58,7 @@ b.Calculate Annual return
 c. merge with market cap and annual return datasets 
 d. output is ranked by market Cap
 ```{r}
-MainData_filepath="SP_H.csv"
+MainData_filepath="Data/SP_H.csv"
 GetMain_Data=function(filePath){
   
 SP_H=read.csv(filePath, stringsAsFactors = FALSE, na.strings = "n/a", header=TRUE)

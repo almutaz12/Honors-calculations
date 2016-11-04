@@ -1,0 +1,170 @@
+---
+title: "Internet Companies.RMD"
+output: html_document
+---
+Get Data
+```{r}
+mainData=GetMain_Data(filePath = MainData_filepath)
+Top_246=getTop_n(data=mainData,n=246)
+```
+
+Get interent companies from SP_Y_H246 data set 
+```{r}
+companyList=c("AMZN","GOOGL", "FB", "PCLN","EBAY","NFLX", "EXPE", "CRM","YHOO","GRPN", "LNKD","TWTR","TRIP", "APPL","MSFT","GOOG","V")
+internetComps=c()
+notInSP=c()
+for(i in 1:length(companyList)){
+  if(companyList[i] %in% Top_246$company){
+    internetComps=rbind(subset(Top_246, company==companyList[i]),internetComps)
+  }
+  else {
+    notInSP=cbind(notInSP,companyList[i])
+  }
+
+}
+```
+
+```{r}
+  Internet<-
+  subset(internetComps,contribution>0) %>%
+  group_by(year) %>%
+  summarise(annualContribution=sum(Contribution_W))
+
+plot(Internet$year,Internet$annualContribution,col="red",main="Contribution of Internet Companies + APPL, MSFT and V",ylim=c(0,0.40),xlab="Years", ylab="Contribution Percentage")
+lines(Internet$year,Internet$annualContribution,col="red")
+```
+
+```{r}
+IT=subset(SP_Y_H246,Sector=="Information Technology" )
+AMZN=subset(SP_Y_H246, company=="AMZN")
+IT=rbind(IT,AMZN)
+IT=IT[order(IT$year, decreasing=FALSE),]
+companies=as.data.frame(table(IT$company))
+Cnames=c()
+plot(IT$year,IT$market_cap,col="red",main="ConsumerStaples Herfindahl-Hirschman Index",ylim=c(-0.01,0.05),xlab="Years", ylab="HHI")
+
+for(i in 1:length(companies$Var1)){
+  data=subset(IT,company==companies$Var1[i])
+  dataa=subset(data,year>2002)
+  if ((max(dataa$Market_Weight)>0.01) ){
+    lines(data$year,data$contribution,col=i)
+    Cnames=rbind(Cnames,data)
+  }
+  else{
+    #lines(data$year,data$contribution,col="red")
+  }
+  
+}
+```
+ 
+
+
+"Herfindahl-Hirschman Index"
+```{r}
+SP_Y_H246$HHI=(SP_Y_H246$Market_Weight*100)^2
+HHI<-
+  SP_Y_H246 %>%
+  group_by(year) %>%
+  summarise(HHIndex=sum(HHI))
+
+ ConsumerDiscretionary=subset(HHI,Sector=="Consumer Discretionary")
+ ConsumerStaples=subset(HHI,Sector=="Consumer Staples")
+ Energy=subset(HHI,Sector=="Energy")
+ Financials=subset(HHI,Sector=="Financials")
+ HealthCare=subset(HHI,Sector=="Health Care")
+ Industrials=subset(HHI,Sector=="Industrials")
+ IT=subset(HHI,Sector=="Information Technology")
+ Telecommunications=subset(HHI,Sector=="Telecommunications")
+ Materials=subset(HHI,Sector=="Materials")
+ 
+ 
+plot(HHI$year,HHI$HHIndex,col="red",main="Market Herfindahl-Hirschman Index",ylim=c(50,200),xlab="Years", ylab="HHI ")
+lines(HHI$year,HHI$HHIndex,col="red")
+
+plot(ConsumerDiscretionary$year,ConsumerDiscretionary$HHIndex,col="red",main="ConsumerDiscretionary Herfindahl-Hirschman Index",ylim=c(0,100),xlab="Years", ylab="HHI ")
+lines(ConsumerDiscretionary$year,ConsumerDiscretionary$HHIndex,col="red")
+
+plot(ConsumerStaples$year,ConsumerStaples$HHIndex,col="red",main="ConsumerStaples Herfindahl-Hirschman Index",ylim=c(0,100),xlab="Years", ylab="HHI")
+lines(ConsumerStaples$year,ConsumerStaples$HHIndex,col="red")
+
+plot( HealthCare$year, HealthCare$HHIndex,col="red",main=" HealthCare Herfindahl-Hirschman Index",ylim=c(0,100),xlab="Years", ylab="HHI ")
+lines(HealthCare$year, HealthCare$HHIndex,col="red")
+
+plot(IT$year,IT$HHIndex,col="red",main=" IT Herfindahl-Hirschman Index",ylim=c(0,100),xlab="Years", ylab="HHI")
+lines(IT$year,IT$HHIndex,col="red")
+
+plot(Financials$year,Financials$HHIndex,col="red",main="Financials Herfindahl-Hirschman Index",ylim=c(0,100),xlab="Years", ylab="HHI")
+lines(Financials$year,Financials$HHIndex,col="red")
+
+plot(Energy$year,Energy$HHIndex,col="red",main="Energy Herfindahl-Hirschman Index",ylim=c(0,100),xlab="Years", ylab="HHI")
+lines(Energy$year,Energy$HHIndex,col="red")
+```
+
+
+Survival Analysis 
+```{r}
+SSP_Y=SP_Y_H246[order(SP_Y_H246$Market_Weight,decreasing = TRUE),]
+SSP_Y=SSP_Y[order(SSP_Y$year,decreasing = TRUE),]
+
+SSP_Y=SP_Y_H246
+Comps=c()
+company=c()
+for(i in 1:length(Chunk1$year)){
+    term=which(SSP_Y$year==Chunk1$year[i])
+    Comps=SSP_Y[term[1:50],]
+    company=rbind(company,Comps)
+}
+S1_Top50=company[order(company$year,decreasing=TRUE),]  
+S_list=as.data.frame(table(S1_Top50$year,S1_Top50$company))
+S_list=rename(S_list, year=`Var1`, company=`Var2`)
+S_list$company=as.character(S_list$company)
+S_list$Freq=as.numeric(S_list$Freq)
+
+S_companies=as.data.frame(table(S1_Top50$company))
+S_companies=rename(S_companies, company=`Var1`)
+S_companies$company=as.character(S_companies$company)
+data_S=data_frame("year"=numeric(),"company"=character(),"Freq"=numeric())
+nCount=c()
+comp_S=c()
+year_S=c()
+n=0
+for (comp in 1:length(S_companies$company)){
+  S_comp=subset(S_list, company==S_companies$company[comp])
+  for (i in 1:length(S_comp$company)){
+    if (S_comp$Freq[i]==1){
+      n=n+1
+    }
+    else{
+      n=0
+    }
+    nCount=n
+    comp_S=S_comp$company[i]
+    year_S=as.numeric(S_comp$year[i])+1986
+    newRow=data_frame(c(year_S),c(comp_S),c(nCount))
+    data_S=rbind(data_S,newRow)
+  }
+  
+}
+# Graphs
+
+data_S=rename(data_S, year=`c(year_S)`,company=`c(comp_S)`,Freq=`c(nCount)`)
+x5_1<-subset(data_S,Freq==1)
+x5_2 <-subset(data_S,Freq==2)
+x5_3<-subset(data_S,Freq==3)
+x5_4<-subset(data_S,Freq==4)
+x5_5<-subset(data_S,Freq==5)
+
+#Histogram with Normal Curve
+x=x5_5$year
+h<-hist(x, breaks=29, col="red", xlab="years",main="Top 50 Companies with Highest market contribution for 5 years") 
+lines(density(x),col="blue")
+lines(density(x, adjust=2), lty="dotted")
+
+xfit<-seq(min(x),max(x),length=40) 
+yfit<-dnorm(xfit,mean=mean(x),sd=sd(x)) 
+yfit <- yfit*diff(h$mids[1:2])*length(x) 
+lines(xfit, yfit, col="blue", lwd=2)
+
+
+```
+
