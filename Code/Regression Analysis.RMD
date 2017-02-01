@@ -8,22 +8,91 @@ Get Data
 ```{r}
 mainData=GetMain_Data(filePath = MainData_filepath)
 Top_246=getTop_n(data=mainData,n=246)
-x= Get_Top_n(Top_246,50)
-x1=Get_Survival_Data(x)
-x2=Compute_Status(x1)
-x3=Internet_T(x2,2000)
-x4=recession_T(x3,recessionData)
-  
 
+RegressionData=PrepareSurvivalData(25,Top_246,2000,recessionData)
+
+threeYear=MultipleYearReturn(3,MainData_filepath)
+threeYear=getTop_n(threeYear,236)
+fiveYear=MultipleYearReturn(5,MainData_filepath)
+fiveYear=getTop_n(fiveYear,236)
 ```
 
 
 Survival Regression Data 
 ```{r}
-RegressionData=PrepareSurvivalData(50,Top_246,2000,recessionData)
+# Temporal Regressions
+# period 1987-1995
+oneYearReturn=subset(Top_246,Top_246$year>=2009 & Top_246$year<=2015)
+threeYearReturn=subset(threeYear,threeYear$year>=2009 & threeYear$year<=2015)
+fiveYearReturn=subset(fiveYear,fiveYear$year>=2009 & fiveYear$year<=2015)
+
+# run regressions function 
+
+timePeriodReg=function(Data,formula){
+  #RegData=Cap_Growth(Data)
+  RegData=Internet_T(Data,1995)
+  RegData=recession_T(RegData,recessionData)
+  #RegData=subset(RegData, ! is.na(RegData$Cap_growth))
+  RegData=InternetComps(RegData,companyList)
+  summary(lm(formula,data=RegData))
+}
+
+```
+
+
+```{r}
+library(survival)
+CoxSnell = function(cs,status,xlim=NULL,ylim=NULL) {
+kmcs = survfit(Surv(cs,status)~1)$surv
+plot(log(-log(kmcs))~unique(sort(log(cs))),xlab="log(Cox-Snell)",ylab="log(-log(S(Cox-Snell)))",xlim=xlim,ylim=ylim)
+abline(0,1,col='red') }
+
+#CS = -log( 1 - mod1(Melanoma$Days,1/exp(9.469850975-0.001566502*Melanoma$Thickness ) ) )
+
+```
 ```
 
 ```{r}
-mod=lm(formula=Freq~year+Status+ recession+Internet, data=RegressionData)
 
+mod=lm(formula=contribution~ recession+ Sector+total_market_cap, data= InternetComps(Top_246,companyList))
+mod1=coxph(Surv(Freq,Status)~Sector, data=Survival1Year)
+mod1
+plot(survfit(mod1))
 ```
+
+LASSO Regression 
+```{r}
+y=InternetComps(Top_246,companyList)
+
+y=subset(Top_246,Top_246$year<=2015 & Top_246$year>=2010)
+
+x=model.matrix(contribution~Sector+company*year+InternetCompany, data=y)
+foo=cv.glmnet(x,y$contribution,alpha=1)
+predict(foo,s=foo$lambda.min,exact=T,type="coefficients")
+```
+
+Panel Data Models
+```{r}
+
+library(plm)
+internetDummy=InternetComps(Top_246,companyList)
+recession_Data=recession_T(internetDummy,recessionData)
+
+#R_Data=recession_Data[order(recession_Data$year,decreasing = TRUE),] 
+#recession_Data=recession_Data[order(recession_Data$company,decreasing = TRUE),]
+
+#attach(recession_Data)
+Y=cbind(contribution)
+X=cbind(Sector,year,InternetCompany,total_market_cap,recession)
+
+pData=plm.data(threeYear,index=c("company","year"))
+pData5=plm.data(fiveYear,index=c("company","year"))
+
+pooling=plm(contribution~Sector+year+InternetCompany,data=pData5,model="pooling")
+
+firstDiff=plm(contribution~Sector+year+InternetCompany,data=pData,model="fd")
+fixed=plm(contribution~Sector+year+InternetCompany,data=pData,model="within")
+random=plm(contribution~Sector+year+InternetCompany,data=pData,model="random")
+between=plm(contribution~Sector+year+InternetCompany,data=pData,model="between")
+```
+

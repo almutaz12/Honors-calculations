@@ -41,7 +41,15 @@ IT=rbind(IT,AMZN)
 IT=IT[order(IT$year, decreasing=FALSE),]
 companies=as.data.frame(table(IT$company))
 Cnames=c()
-plot(IT$year,IT$market_cap,col="red",main="ConsumerStaples Herfindahl-Hirschman Index",ylim=c(-0.01,0.05),xlab="Years", ylab="HHI")
+
+x=InternetComps(Top_246,companyList)
+pnts=which(x$Sector=="Internet Companies")
+
+
+plot(Top_246$year,Top_246$contribution,col= "red",main=" Annual Contribution Per Year ",ylim=c(-.02,.07),xlab="Years", ylab="Contribution")
+points(Top_246$year[pnts], Top_246$contribution[pnts], col = "blue")
+
+
 
 for(i in 1:length(companies$Var1)){
   data=subset(IT,company==companies$Var1[i])

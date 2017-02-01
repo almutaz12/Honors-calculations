@@ -11,9 +11,11 @@ PrepareSurvivalData=function(Ncomps,data, Internet_StartDate, recessionData){
   status=Compute_Status(Survival_data)
   Internet_timeLine=Internet_T(status,Internet_StartDate)
   Recession=recession_T(Internet_timeLine,recessionData)
+  sectors=Sector_A(data,Recession)
+  internetcompss=InternetComps(sectors,companyList)
   
   
-  return(Recession)
+  internetcompss
 }
 ```
 
@@ -132,4 +134,36 @@ recession_T=function(data,Recession_data){
   data
 }
 ```
+
+Add Sector 
+
+```{r}
+Sector_A =function(data,survData){
+  sectors=data[,c("Sector","company","year")]
+  output=merge(survData,sectors,by=c("company","year"))
+  output
+}
+```
+
+Add Internet Companies 
+```{r}
+companyList=c("AMZN","GOOGL", "FB", "PCLN","EBAY","NFLX", "EXPE", "CRM","YHOO","GRPN", "LNKD","TWTR","TRIP", "AAPL","MSFT","GOOG","V","PYPL","VRSN")
+InternetComps=function(data,CompsList){
+  internetcomps=numeric(nrow(data))
+  indexes=c()
+  for (i in 1:length(CompsList)){
+    indexes=c(indexes,which(data$company==CompsList[i]))
+  }
+  for (j in 1:nrow(data)){
+    if(j %in% indexes){
+      data$InternetCompany[j]=1
+    }
+    else {data$InternetCompany[j]=0}
+  }
+  #data$internetComps=internetcomps
+  data
+}
+
+```
+
 

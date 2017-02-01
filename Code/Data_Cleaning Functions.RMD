@@ -78,6 +78,7 @@ Yearly_returns <-
 #  Merging data SP Yearly Returns data with Market Returns and Market Cap Data.
   marketCap=MarketCap_Data(filePath=MarketCap_filepath)
   marketReturn=MarketReturn_Data(filePath = market_R_filePath)
+  print(nrow(SP_Y_H))
    SP_Y_H=merge(SP_Y_H,marketReturn,by=c("year"))
    SP_Y_H=merge(SP_Y_H,marketCap,by=c("year","company"))
   
@@ -141,10 +142,78 @@ b. final dataset is ranked by contribution
     }
     Top_n=company[order(company$year,decreasing=TRUE),]
     #add total Market Cap
+   
     TotalMarket_Cap=TotalCap(Top_n)
-    TotalMarket_Cap
+    internet=InternetComps(TotalMarket_Cap,companyList)
+    internet
   }
 ```
 
+Add Market Cap Percentage Growth
+```{r}
+Cap_Growth=function(data){
+  cap=data %>% 
+  arrange(company,year) %>%
+  group_by(company) %>%
+  mutate(Cap_growth= percentage_change(market_cap, lag = 1)) 
+  cap=cap[order(cap$Cap_growth,decreasing=TRUE),]
+  cap=cap[order(cap$year,decreasing=TRUE),]
+  cap
+}
+```
 
+
+```{r}
+
+MultipleYearReturn=function(Nyears,filePath){
+  library(quantmod)
+  SP_H=read.csv(filePath, stringsAsFactors = FALSE, na.strings = "n/a", header=TRUE)
+  za <- 
+    subset(SP_H,SP_H$volume!=0)%>% 
+    arrange(company, date) %>%
+    group_by(company) %>%
+    mutate(daily_return = percentage_change(adj_close, lag = 1)) %>%
+    mutate(year = lubridate::year(date)) %>%
+    group_by(company, year)
+  sa=as.data.frame(table(za$year,za$company))
+  sa=subset(sa,sa$Freq>0)
+  sa$cumSum=cumsum(sa$Freq)
+  
+  d<-za[sa$cumSum,]
+  multiple_Y_Returns=c()
+  list1=as.data.frame(table(d$company))
+  list1=rename(list1,company=`Var1`,years=`Freq`)
+  list1=subset(list1,years>Nyears)
+  for(i in 1:nrow(list1)){
+    temp=subset(d,d$company==list1$company[i])
+    years=list1$years[i]
+    returns=as.data.frame(Delt(temp$adj_close,k=Nyears,type="arithmetic"))
+    temp1=cbind(returns,temp$year)
+    temp1=rename(temp1,year=`temp$year`)
+    temp2=merge(temp1,temp,by=c("year"))
+    multiple_Y_Returns=rbind(temp2,multiple_Y_Returns)
+  }
+  marketCap=MarketCap_Data(filePath=MarketCap_filepath)
+  marketReturn=MarketReturn_Data(filePath = market_R_filePath)
+  multiple_Y_Returns=merge(multiple_Y_Returns,marketReturn,by=c("year"))
+  multiple_Y_Returns=merge(multiple_Y_Returns,marketCap,by=c("year","company"))
+  multiple_Y_Returns$market_cap=as.numeric(multiple_Y_Returns$market_cap)
+  multiple_Y_Returns=rename(multiple_Y_Returns, yearly_return=`Delt.3.arithmetic`)
+  multiple_Y_Returns=subset(multiple_Y_Returns,! is.na(multiple_Y_Returns$yearly_return))
+  multiple_Y_Returns=multiple_Y_Returns[order(multiple_Y_Returns$market_cap, decreasing = TRUE),]
+  multiple_Y_Returns=multiple_Y_Returns[order(multiple_Y_Returns$year, decreasing = TRUE),]
+  #multiple_Y_Returns= getTop_n(multiple_Y_Returns,236)
+  
+  multiple_Y_Returns
+}
+  
+  
+#  ordering by size and taking 246 comps baskets 
+ 
+
+#multiple_Y_Returns=subset(multiple_Y_Returns,! is.na(multiple_Y_Returns$Delt.5.arithmetic))
+
+
+
+```
 
